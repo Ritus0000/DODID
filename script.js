@@ -283,3 +283,11 @@ window.addEventListener('resize', ()=>{
     }
   });
 });
+/* ====== СКРЫТИЕ КЛАВИАТУРЫ ПО ТАПУ ====== */
+document.addEventListener("click", (e) => {
+  // если кликнули НЕ по тексту задачи → убираем фокус
+  if (!e.target.classList.contains("task-text")) {
+    document.activeElement.blur();
+  }
+});
+
