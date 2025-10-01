@@ -1,11 +1,11 @@
-/* ===== День недели (динамически) ===== */
+/* ===== Dynamic day name ===== */
 const ruDays = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
 function setDayHeader(d=new Date()){
   document.getElementById("dayHeader").textContent = ruDays[d.getDay()];
 }
 setDayHeader();
 
-/* ===== Хранилище + ежедневный перенос ===== */
+/* ===== Storage + daily rollover ===== */
 const KEY_TASKS='dodid_tasks_v1';
 const KEY_LAST ='dodid_lastDate';
 const START_TASKS = 3;
@@ -22,7 +22,6 @@ if(raw===null){
 function save(){ localStorage.setItem(KEY_TASKS, JSON.stringify(tasks)); }
 function todayKey(d=new Date()){ return d.toDateString(); }
 
-/* перенос невыполненных на новый день + обновление lastDate */
 function rolloverIfNeeded(){
   const today = todayKey();
   const last  = localStorage.getItem(KEY_LAST);
@@ -32,30 +31,23 @@ function rolloverIfNeeded(){
     .filter(t => !t.done && (t.text||'').trim()!=='')
     .map(t => ({ text:t.text, done:false, carried:true }));
 
-  if(carried.length===0){
-    tasks = Array.from({length:START_TASKS},()=>({text:'',done:false}));
-  }else{
-    tasks = [...carried, {text:'',done:false}];
-  }
+  tasks = carried.length ? [...carried, {text:'',done:false}] :
+                           Array.from({length:START_TASKS},()=>({text:'',done:false}));
 
   save();
   localStorage.setItem(KEY_LAST, today);
 }
 rolloverIfNeeded();
 
-/* обновлять в полночь (чек раз в минуту) */
-setInterval(()=>{
-  setDayHeader();
-  rolloverIfNeeded();
-  render(); // малоэлементный список — перерисовать недорого
-}, 60_000);
+/* Re-check header/rollover each minute (lightweight) */
+setInterval(()=>{ setDayHeader(); rolloverIfNeeded(); render(); }, 60_000);
 
 /* ===== DOM ===== */
 const list = document.getElementById('tasks');
 const addBtn = document.getElementById('addBtn');
 const mainEl = document.querySelector('main');
 
-/* полоска прокрутки видна только во время скролла */
+/* Show thin scrollbar only during scroll */
 let scrollHideTimer=null;
 function tempShowScrollbar(){
   mainEl.classList.add('scrolling');
@@ -64,12 +56,10 @@ function tempShowScrollbar(){
 }
 mainEl.addEventListener('scroll', tempShowScrollbar, {passive:true});
 
-/* ===== Вспомогательные ===== */
+/* ===== Helpers ===== */
 function syncEmptyClass(el){
   if((el.textContent||'').trim()==='') el.classList.add('empty'); else el.classList.remove('empty');
 }
-
-/* статичная галочка (без анимации) */
 function makeTickSVGStatic(){
   const svgNS='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(svgNS,'svg');
@@ -79,7 +69,7 @@ function makeTickSVGStatic(){
   svg.appendChild(p1); svg.appendChild(p2); return svg;
 }
 
-/* точный Y зачёркивания: baseline - xHeight/2 (калибруем кириллицей) */
+/* Font metrics for Cyrillic strike-through: baseline - xHeight/2 */
 let fontMetricsCache=null;
 function computeFontMetricsFor(el){
   const cs=getComputedStyle(el);
@@ -108,7 +98,7 @@ function getFontMetrics(el){
   return fontMetricsCache;
 }
 
-/* зачёркивание по реальному тексту (на каждую визуальную строку) */
+/* Build strike-through lines across each visual row of text */
 function buildStrike(textWrap, animate=true){
   const old=textWrap.querySelector('.strike-svg'); if(old) old.remove();
   const textEl=textWrap.querySelector('.task-text'); if(!textEl) return;
@@ -159,7 +149,7 @@ function buildStrike(textWrap, animate=true){
   textWrap.appendChild(svg);
 }
 
-/* ===== Рендер ===== */
+/* ===== Render ===== */
 function render(){
   list.innerHTML='';
 
@@ -167,7 +157,7 @@ function render(){
     const t=tasks[i];
     const li=document.createElement('li'); if(t.done) li.classList.add('done');
 
-    /* кружок */
+    /* Circle */
     const circle=document.createElement('div'); circle.className='circle';
     if(t.done){ circle.appendChild(makeTickSVGStatic()); }
     circle.addEventListener('pointerdown', ()=> circle.classList.add('touch'));
@@ -175,10 +165,11 @@ function render(){
     circle.addEventListener('pointercancel',()=> circle.classList.remove('touch'));
     circle.addEventListener('pointerleave', ()=> circle.classList.remove('touch'));
 
-    /* текст */
+    /* Text */
     const textWrap=document.createElement('div'); textWrap.className='textwrap';
     const text=document.createElement('div');
-    text.className='task-text'; text.contentEditable='true'; text.spellcheck=false;
+    text.className='task-text fade-in'; /* will fade-in on first frame */
+    text.contentEditable='true'; text.spellcheck=false;
     text.dataset.placeholder='Новая задача…'; text.textContent=t.text||'';
     syncEmptyClass(text);
 
@@ -187,9 +178,12 @@ function render(){
     li.appendChild(textWrap);
     list.appendChild(li);
 
-    /* клик по кружку: статичная галочка + зачёркивание */
+    /* Trigger text fade-in after attachment */
+    requestAnimationFrame(()=> text.classList.add('show'));
+
+    /* Tap on circle: press + instant fill + tick + strike */
     circle.addEventListener('click', ()=>{
-      if((text.textContent||'').trim()==='') return; // пустую не отмечаем
+      if((text.textContent||'').trim()==='') return; // don't check empty line
       t.done=!t.done; save();
       if(t.done){
         li.classList.add('done');
@@ -203,13 +197,13 @@ function render(){
       }
     });
 
-    /* ввод текста */
+    /* Input */
     text.addEventListener('input', ()=>{
       tasks[i].text=text.textContent; save(); syncEmptyClass(text);
       if(t.done) buildStrike(textWrap, false);
     });
 
-    /* удаление пустой строки Backspace/Delete (разрешено всем, включая первые три) */
+    /* Delete empty line via Backspace/Delete */
     text.addEventListener('keydown',(e)=>{
       const val=(text.textContent||'').trim();
       if((e.key==='Backspace'||e.key==='Delete') && val===''){
@@ -221,31 +215,36 @@ function render(){
     if(t.done) buildStrike(textWrap, false);
   }
 
-  /* прокладка, чтобы можно было докрутить до «пустого поля» */
+  /* Spacer to allow scrolling to blank area */
   const spacer=document.createElement('li'); spacer.style.height='45vh';
   spacer.setAttribute('aria-hidden','true'); list.appendChild(spacer);
 }
 
-/* ===== Добавить задачу (без автоскролла) ===== */
+/* ===== Add task — NO auto-scroll; circle impulse; text smooth ===== */
 function addTask(){
   tasks.push({text:'',done:false}); save(); render();
 
-  const lastLi=list.querySelector('li:nth-last-child(2)'); // последняя реальная
+  const lastLi=list.querySelector('li:nth-last-child(2)'); // last real entry
   if(lastLi){
     const c=lastLi.querySelector('.circle'); const tx=lastLi.querySelector('.task-text');
     if(c){ c.classList.add('born'); setTimeout(()=>c.classList.remove('born'), 800); }
-    if(tx){ tx.focus(); tx.classList.add('empty'); } // placeholder виден и плавный
+    if(tx){
+      tx.classList.add('fade-in'); // ensure fade baseline
+      requestAnimationFrame(()=> tx.classList.add('show')); // smooth text reveal
+      tx.classList.add('empty');
+      tx.focus();
+    }
   }
 }
 
-/* «+» — эффект нажатия */
+/* “+” press feedback */
 addBtn.addEventListener('pointerdown', ()=> addBtn.classList.add('pressed'));
 addBtn.addEventListener('pointerup',   ()=> addBtn.classList.remove('pressed'));
 addBtn.addEventListener('pointercancel',()=> addBtn.classList.remove('pressed'));
 addBtn.addEventListener('pointerleave', ()=> addBtn.classList.remove('pressed'));
 addBtn.addEventListener('click', addTask);
 
-/* скрывать клавиатуру по тапу вне поля (в браузере работает стабильно) */
+/* Hide keyboard on tap outside editable (browser-safe) */
 document.addEventListener('pointerdown', (e)=>{
   if(!e.target.closest('.task-text')){
     const ae=document.activeElement;
@@ -253,10 +252,10 @@ document.addEventListener('pointerdown', (e)=>{
   }
 }, {passive:true});
 
-/* первый рендер */
+/* Initial render */
 render();
 
-/* пересчитать зачёркивание при ресайзе (переносы строк) */
+/* Rebuild strike on resize (line wraps change) */
 window.addEventListener('resize', ()=>{
   document.querySelectorAll('li').forEach(li=>{
     if(li.classList.contains('done')){
