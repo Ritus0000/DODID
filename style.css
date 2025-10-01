@@ -1,6 +1,6 @@
 /* === iOS Notes-like sizing (только размеры) === */
 :root{
-  --task-font:18px;      /* размер текста задачи */
+  --task-font:10px;      /* размер текста задачи */
   --header-font:36px;    /* «Четверг» */
   --circle:20px;         /* диаметр кружка */
   --circle-border:1.5px; /* толщина обводки кружка */
@@ -53,3 +53,4 @@ li{
   font-size:34px;             /* размер плюса внутри */
   box-shadow:0 8px 16px rgba(0,0,0,.18);
 }
+
