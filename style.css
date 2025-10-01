@@ -5,10 +5,10 @@
   --ring:#aaa;
   --brand:#8a8a8a;
 
-  --pop-duration:520ms; /* рождение кружка */
+  --pop-duration:520ms; /* impulse birth of circle */
 }
 
-/* Убираем bounce у страницы, скроллим только main */
+/* Page layout — block iOS bounce on whole page, scroll only main */
 html, body{
   margin:0; padding:0; height:100%;
   background:#fff; color:var(--ink);
@@ -16,7 +16,7 @@ html, body{
   overflow:hidden; display:flex; flex-direction:column;
 }
 
-/* Фикс-верх: день недели, не «плавает» */
+/* Fixed top — day name */
 header{
   flex:0 0 auto;
   padding:20px 16px 10px;
@@ -24,27 +24,27 @@ header{
   background:#fff;
 }
 
-/* Прокручиваем только список */
+/* Scrollable list only here */
 main{
   flex:1 1 auto;
   overflow:auto;
   padding:0 16px;
   -webkit-overflow-scrolling:touch;
-  overscroll-behavior:none;
+  overscroll-behavior:none; /* no rubber-banding inside */
 }
 
-/* Супер-тонкая полоса справа, видна только во время скролла */
+/* Ultra-thin scrollbar on the right (visible only while scrolling) */
 main::-webkit-scrollbar{ width:1px; height:1px; }
 main::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); }
 main.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
 main{ scrollbar-width:none; }
 main.scrolling{ scrollbar-width:thin; scrollbar-color:rgba(0,0,0,.24) transparent; }
 
-/* Список задач */
+/* Task list */
 #tasks{ list-style:none; margin:0; padding:0; }
 li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-height:1.25; }
 
-/* Кружок: нажатие и рождение */
+/* Circle: press feedback + impulse birth */
 .circle{
   width:20px; height:20px; border:2px solid var(--ring);
   border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
@@ -61,26 +61,30 @@ li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-
 .tick{ width:14px; height:14px; display:block; }
 .tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
 
-/* Текст задачи + тонкий серый placeholder «Новая задача…» */
+/* Text + smooth “New task…” reveal + smooth initial text fade */
 .textwrap{ position:relative; flex:1; }
 .task-text{
   position:relative;
   min-height:1.25em; white-space:pre-wrap; word-break:break-word;
   outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
-  padding:2px 0 4px; /* чтобы хвосты g/j/q/p не резались */
+  padding:2px 0 4px;
+  opacity:1; transform:none;
 }
+.task-text.fade-in{ opacity:0; transform: translateY(2px); }
+.task-text.fade-in.show{ transition: opacity 220ms ease, transform 220ms ease; opacity:1; transform:none; }
+
+/* Placeholder — thin, light gray; fades if we toggle .empty */
 .task-text::before{
   content: attr(data-placeholder);
   position:absolute; left:0; top:0;
-  color:#bbb; font-weight:300; /* тонкий и светло-серый */
-  pointer-events:none;
+  color:#bbb; font-weight:300; pointer-events:none;
   opacity:0; transform: translateY(2px);
   transition: opacity 220ms ease, transform 220ms ease;
 }
 .task-text.empty::before{ opacity:1; transform: translateY(0); }
 .done .task-text{ color:var(--muted); }
 
-/* Зачёркивание только по тексту (SVG поверх) */
+/* Strike-through only across visible text lines (SVG overlay) */
 .strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
 .strike-line{
   stroke: currentColor; stroke-width:1; stroke-linecap:round;
@@ -88,13 +92,12 @@ li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-
   transition: stroke-dashoffset 220ms ease-out; opacity:.95;
 }
 
-/* Низ: белый прямоугольный док, DODID серым, «+» круглый с нажатием */
+/* Bottom dock: white rectangle, brand + round “+” */
 .bottomDock{
   flex:0 0 auto;
   position:sticky; bottom:0; z-index:5;
   padding:10px 16px; background:#fff;
   display:flex; align-items:center; justify-content:space-between;
-  border-top:1px solid rgba(0,0,0,0); /* без видимой тени */
 }
 .brand{ font-family:"Fredoka",system-ui,-apple-system,sans-serif; font-weight:700; font-size:22px; color:var(--brand); user-select:none; }
 
