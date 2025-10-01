@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Dodid</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       font-family: "Helvetica Neue", sans-serif;
       background: #fff;
-      overflow-x: hidden;
+      overflow: hidden; /* убираем bounce-scroll у всей страницы */
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
 
     /* Заголовок дня недели */
@@ -28,6 +29,8 @@
       flex: 1 1 auto;
       overflow-y: auto;
       padding: 0 20px;
+      -webkit-overflow-scrolling: touch; /* плавный скролл */
+      overscroll-behavior: none;         /* запрещаем резиновый отскок */
     }
 
     .task {
