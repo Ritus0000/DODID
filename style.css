@@ -1,115 +1,55 @@
+/* === iOS Notes-like sizing (только размеры) === */
 :root{
-  --accent:#ffd000;
-  --ink:#000;
-  --muted:#777;
-  --ring:#aaa;
-  --brand:#8a8a8a;
-
-  --pop-duration:520ms; /* impulse birth of circle */
+  --task-font:18px;      /* размер текста задачи */
+  --header-font:36px;    /* «Четверг» */
+  --circle:20px;         /* диаметр кружка */
+  --circle-border:1.5px; /* толщина обводки кружка */
+  --tick:14px;           /* размер галочки */
+  --brand-font:20px;     /* DODID внизу */
+  --fab:64px;            /* диаметр кнопки + */
 }
 
-/* Page layout — block iOS bounce on whole page, scroll only main */
-html, body{
-  margin:0; padding:0; height:100%;
-  background:#fff; color:var(--ink);
-  font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-  overflow:hidden; display:flex; flex-direction:column;
-}
-
-/* Fixed top — day name */
+/* Заголовок дня — крупнее и с чуть большим верхним полем */
 header{
-  flex:0 0 auto;
-  padding:20px 16px 10px;
-  font-size:32px; font-weight:800;
-  background:#fff;
+  font-size:var(--header-font);
+  padding:24px 18px 12px;
 }
 
-/* Scrollable list only here */
-main{
-  flex:1 1 auto;
-  overflow:auto;
-  padding:0 16px;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:none; /* no rubber-banding inside */
+/* Строка задачи — шрифт и межстрочный интервал ближе к iOS Notes */
+li{
+  font-size:var(--task-font);
+  line-height:1.3;
+  padding:8px 4px;       /* вертикальный ритм между задачами */
 }
 
-/* Ultra-thin scrollbar on the right (visible only while scrolling) */
-main::-webkit-scrollbar{ width:1px; height:1px; }
-main::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); }
-main.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
-main{ scrollbar-width:none; }
-main.scrolling{ scrollbar-width:thin; scrollbar-color:rgba(0,0,0,.24) transparent; }
-
-/* Task list */
-#tasks{ list-style:none; margin:0; padding:0; }
-li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-height:1.25; }
-
-/* Circle: press feedback + impulse birth */
+/* Кружок — больше, толще рамка и чуть правее отступ */
 .circle{
-  width:20px; height:20px; border:2px solid var(--ring);
-  border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition: transform 90ms ease, box-shadow 90ms ease,
-              background-color 140ms ease, border-color 140ms ease;
-  box-shadow:none; position:relative;
-}
-.circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); }
-.circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
-@keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
-
-.done .circle{ background:var(--accent); border-color:var(--accent); }
-.tick{ width:14px; height:14px; display:block; }
-.tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
-
-/* Text + smooth “New task…” reveal + smooth initial text fade */
-.textwrap{ position:relative; flex:1; }
-.task-text{
-  position:relative;
-  min-height:1.25em; white-space:pre-wrap; word-break:break-word;
-  outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
-  padding:2px 0 4px;
-  opacity:1; transform:none;
-}
-.task-text.fade-in{ opacity:0; transform: translateY(2px); }
-.task-text.fade-in.show{ transition: opacity 220ms ease, transform 220ms ease; opacity:1; transform:none; }
-
-/* Placeholder — thin, light gray; fades if we toggle .empty */
-.task-text::before{
-  content: attr(data-placeholder);
-  position:absolute; left:0; top:0;
-  color:#bbb; font-weight:300; pointer-events:none;
-  opacity:0; transform: translateY(2px);
-  transition: opacity 220ms ease, transform 220ms ease;
-}
-.task-text.empty::before{ opacity:1; transform: translateY(0); }
-.done .task-text{ color:var(--muted); }
-
-/* Strike-through only across visible text lines (SVG overlay) */
-.strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
-.strike-line{
-  stroke: currentColor; stroke-width:1; stroke-linecap:round;
-  stroke-dasharray: var(--len, 0); stroke-dashoffset: var(--len, 0);
-  transition: stroke-dashoffset 220ms ease-out; opacity:.95;
+  width:var(--circle);
+  height:var(--circle);
+  border-width:var(--circle-border);
+  margin-right:14px;
+  margin-top:4px;        /* выравнивание по оптической оси текста */
 }
 
-/* Bottom dock: white rectangle, brand + round “+” */
+/* Галочка — больше и толще линия */
+.tick{ width:var(--tick); height:var(--tick); }
+.tick path{ stroke-width:2.5; }
+
+/* Плейсхолдер остаётся тонким и светло-серым, но подгоняем размер */
+.task-text::before{ font-size:var(--task-font); }
+
+/* Нижний док и элементы в нём — крупнее и ниже */
 .bottomDock{
-  flex:0 0 auto;
-  position:sticky; bottom:0; z-index:5;
-  padding:10px 16px; background:#fff;
-  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px;
+  /* чтобы не прилипало к нижней панели Safari/жестовой полосе */
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
-.brand{ font-family:"Fredoka",system-ui,-apple-system,sans-serif; font-weight:700; font-size:22px; color:var(--brand); user-select:none; }
-
+.brand{
+  font-size:var(--brand-font);
+}
 .fab{
-  width:54px; height:54px; border-radius:50%;
-  background:var(--accent); color:#fff; font-size:32px; line-height:0;
-  border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
-  box-shadow:0 6px 12px rgba(0,0,0,.16);
-  will-change:transform, box-shadow; transition: transform 120ms ease, box-shadow 120ms ease;
-}
-.fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.98); }
-
-@media (prefers-reduced-motion:reduce){
-  *{ animation:none !important; transition:none !important; }
+  width:var(--fab);
+  height:var(--fab);
+  font-size:34px;             /* размер плюса внутри */
+  box-shadow:0 8px 16px rgba(0,0,0,.18);
 }
