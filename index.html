@@ -1,44 +1,144 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Dodid</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", sans-serif;
+      background: #fff;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-  <!-- PWA/веб-апп мета (можно оставить) -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="white">
-  <meta name="apple-mobile-web-app-title" content="Dodid">
+    /* Заголовок дня недели */
+    header {
+      flex: 0 0 auto;
+      padding: 20px;
+      font-size: 28px;
+      font-weight: bold;
+    }
 
-  <!-- Шрифт для лейбла DODID -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
+    /* Список задач */
+    main {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 0 20px;
+    }
 
-  <link rel="stylesheet" href="./style.css">
+    .task {
+      display: flex;
+      align-items: center;
+      font-size: 20px;
+      margin: 10px 0;
+    }
+
+    .circle {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #aaa;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .text {
+      flex: 1;
+      outline: none;
+      color: #444;
+    }
+
+    /* Нижняя панель */
+    footer {
+      flex: 0 0 auto;
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: #fff;
+    }
+
+    .logo {
+      font-family: 'Fredoka', sans-serif;
+      font-weight: bold;
+      font-size: 18px;
+      color: #888;
+    }
+
+    .add-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #ffd000;
+      border: none;
+      font-size: 28px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .add-btn:active {
+      transform: scale(0.92);
+      box-shadow: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="wrapper">
-    <div class="phone">
-      <div class="statusbar">
-        <div id="time">9:41</div>
-        <div style="width:40px; text-align:right;">📶 🔋</div>
-        <div class="island"></div>
-      </div>
+  <!-- Заголовок с днём недели -->
+  <header id="day-name"></header>
 
-      <div class="app">
-        <div class="header" id="dayHeader">—</div>
+  <!-- Список задач -->
+  <main id="task-list">
+    <div class="task"><div class="circle"></div><div class="text" contenteditable="true">Новая задача…</div></div>
+    <div class="task"><div class="circle"></div><div class="text" contenteditable="true">Новая задача…</div></div>
+    <div class="task"><div class="circle"></div><div class="text" contenteditable="true">Новая задача…</div></div>
+  </main>
 
-        <ul id="tasks"></ul>
+  <!-- Нижняя панель -->
+  <footer>
+    <div class="logo">DODID</div>
+    <button class="add-btn" onclick="addTask()">+</button>
+  </footer>
 
-        <div class="bottomDock">
-          <div class="brand">DODID</div>
-          <button class="fab" id="addBtn" aria-label="+">+</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <script>
+    // массив дней недели
+    const days = [
+      "Воскресенье",
+      "Понедельник",
+      "Вторник",
+      "Среда",
+      "Четверг",
+      "Пятница",
+      "Суббота"
+    ];
 
-  <script src="./script.js"></script>
+    // обновляем заголовок с днём недели
+    function updateDay() {
+      const today = new Date();
+      document.getElementById("day-name").textContent = days[today.getDay()];
+    }
+    updateDay();
+
+    // добавление новой задачи
+    const taskList = document.getElementById('task-list');
+    function addTask() {
+      const task = document.createElement('div');
+      task.className = 'task';
+      task.innerHTML = `
+        <div class="circle"></div>
+        <div class="text" contenteditable="true">Новая задача…</div>
+      `;
+      taskList.appendChild(task);
+      task.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+  </script>
 </body>
 </html>
