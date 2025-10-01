@@ -102,3 +102,8 @@
   .fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.98); }
 
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+
+/* ==== Safari text-decoration fix & strike alignment override ==== */
+.task-text { text-decoration: none; -webkit-text-decoration-skip: none; }
+li.done .task-text { text-decoration: none; }
+.textwrap { position: relative; } /* container for strike-svg */

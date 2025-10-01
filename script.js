@@ -239,3 +239,69 @@
       }
     });
   });
+
+/* ==== iOS Safari strike alignment fix ==== */
+(function(){
+  function isIOS(){
+    const ua = navigator.userAgent || '';
+    const platform = navigator.platform || '';
+    const macTouch = ua.includes('Mac') && 'ontouchend' in document;
+    return /iP(hone|od|ad)/.test(platform) || macTouch;
+  }
+
+  // If original buildStrike exists — override it with a version tuned for iOS
+  if (typeof window.buildStrike === 'function' || true){
+    window.buildStrike = function(textWrap, animate=true){
+      const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
+      const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
+
+      if (typeof window.syncEmptyClass === 'function') window.syncEmptyClass(textEl);
+
+      const range = document.createRange(); range.selectNodeContents(textEl);
+      const rects = Array.from(range.getClientRects());
+
+      const svgNS='http://www.w3.org/2000/svg';
+      const svg=document.createElementNS(svgNS,'svg'); svg.classList.add('strike-svg');
+
+      const parentRect=textWrap.getBoundingClientRect();
+      svg.setAttribute('width', parentRect.width);
+      svg.setAttribute('height', parentRect.height);
+      svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
+
+      // On iOS we rely on visual rect center; elsewhere try metrics if available
+      let metrics = null;
+      try{
+        if(!isIOS() && typeof window.getFontMetrics === 'function'){
+          metrics = window.getFontMetrics(textEl);
+        }
+      }catch(_){ metrics = null; }
+
+      rects.forEach(r=>{
+        const x1 = r.left - parentRect.left;
+        const x2 = r.right - parentRect.left;
+        const len = Math.max(0, x2 - x1);
+        if(len <= 0) return;
+
+        let yLocal;
+        if(metrics){
+          const baseline = (r.bottom - parentRect.top) - metrics.descent;
+          const cap = metrics.ascent;
+          yLocal = baseline - cap*0.50; // center optically
+        }else{
+          yLocal = (r.top - parentRect.top) + r.height*0.52; // robust for Safari
+        }
+
+        const line=document.createElementNS(svgNS,'line');
+        line.setAttribute('x1', x1); line.setAttribute('y1', yLocal);
+        line.setAttribute('x2', x2); line.setAttribute('y2', yLocal);
+        line.classList.add('strike-line');
+        line.style.setProperty('--len', `${len}`);
+        if(!animate){ line.style.strokeDashoffset=0; line.style.transition='none'; }
+        svg.appendChild(line);
+        if(animate){ requestAnimationFrame(()=>{ line.style.strokeDashoffset=0; }); }
+      });
+
+      textWrap.appendChild(svg);
+    };
+  }
+})();
