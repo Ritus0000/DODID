@@ -22,39 +22,13 @@
     --brand:#8a8a8a;
     --phone-w:390px; --phone-h:844px;
 
-    --pop-duration:520ms; /* медленнее рождение кружка */
+    --pop-duration:520ms; /* РјРµРґР»РµРЅРЅРµРµ СЂРѕР¶РґРµРЅРёРµ РєСЂСѓР¶РєР° */
   }
 
-  /* === Жёсткая фиксация экрана === */
-  html, body{
-    height:100%;
-    margin:0;
-    overflow:hidden;                /* страница не скроллится */
-    overscroll-behavior:none;       /* без резинки */
-    background:#fff;
-    -webkit-text-size-adjust:100%;
-  }
-
-  /* Стабильная единица высоты: svh -> dvh, если доступно */
-  :root{ --vh: 100svh; }
-  @supports (height: 100dvh) { :root{ --vh: 100dvh; } }
-
-  body{ font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; color:var(--ink); }
-  .wrapper{ min-height:100%; display:flex; align-items:center; justify-content:center; background:#e9edf1; padding:16px; box-sizing:border-box; }
-  .phone{
-    width:var(--phone-w); height:var(--phone-h); background:#fff; border-radius:34px; box-shadow:0 18px 50px rgba(0,0,0,18); position:relative; overflow:hidden;
-  }
-
-  /* Мобильный полноэкранный режим: фиксируем ко вьюпорту */
-  @media (max-width:480px),(hover:none) and (pointer:coarse){
-    .wrapper{padding:0; background:#fff;}
-    .phone{
-      width:100%;
-      height:var(--vh);
-      border-radius:0; box-shadow:none;
-      position:fixed; inset:0;     /* КЛЮЧ — не «ездит» за адресной строкой */
-    }
-  }
+  body{ font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:#fff; color:var(--ink); margin:0; }
+  .wrapper{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:#e9edf1; padding:16px; box-sizing:border-box; }
+  .phone{ width:var(--phone-w); height:var(--phone-h); background:#fff; border-radius:34px; box-shadow:0 18px 50px rgba(0,0,0,.18); position:relative; overflow:hidden; }
+  @media (max-width:480px),(hover:none) and (pointer:coarse){ .wrapper{padding:0; background:#fff;} .phone{width:100%; height:100dvh; border-radius:0; box-shadow:none;} }
 
   .statusbar{ height:47px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-size:14px; font-weight:600; background:#fff; }
   .island{ position:absolute; top:9px; left:50%; transform:translateX(-50%); width:120px; height:32px; background:#000; border-radius:20px; }
@@ -63,25 +37,24 @@
 
   .header{ font-size:32px; font-weight:800; margin-bottom:10px; }
 
-  /* Список — единственное место, где разрешён скролл */
+  /* РЎРїРёСЃРѕРє: РЅР°С‚РёРІРЅР°СЏ РїРѕР»РѕСЃР° РџР РђР’Рћ, РѕС‡РµРЅСЊ С‚РѕРЅРєР°СЏ, Р±РµР· СЃС‚СЂРµР»РѕРє; РІРёРґРЅР° С‚РѕР»СЊРєРѕ РїСЂРё СЃРєСЂРѕР»Р»Рµ */
   #tasks{
     list-style:none; margin:0; padding:0; flex:1; overflow:auto;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width: none;
+    scrollbar-width: none; /* Firefox: СЃРєСЂС‹С‚Р° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ */
   }
-  #tasks.scrolling{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,22) transparent; }
-  #tasks::-webkit-scrollbar{ width:1px; height:1px; }
-  #tasks::-webkit-scrollbar-button{ display:none; width:0; height:0; }
+  #tasks.scrolling{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.22) transparent; }
+  #tasks::-webkit-scrollbar{ width:1px; height:1px; }                 /* СЃСѓРїРµСЂ-С‚РѕРЅРєР°СЏ */
+  #tasks::-webkit-scrollbar-button{ display:none; width:0; height:0; } /* Р±РµР· СЃС‚СЂРµР»РѕРє */
   #tasks::-webkit-scrollbar-track{ background:transparent; }
   #tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); border-radius:0; }
-  #tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,24); }
+  #tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
 
   .scroll-spacer{ height:45vh; }
 
-  /* Строка — компактная */
+  /* РЎС‚СЂРѕРєР° вЂ” РєРѕРјРїР°РєС‚РЅР°СЏ */
   li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-height:1.25; }
 
-  /* Кружок */
+  /* РљСЂСѓР¶РѕРє */
   .circle{
     width:20px; height:20px; border:2px solid var(--ring);
     border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
@@ -89,16 +62,16 @@
     transition: transform 90ms ease, box-shadow 90ms ease, background-color 140ms ease, border-color 140ms ease;
     box-shadow:none; position:relative;
   }
-  .circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,25); }
-  .circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,8,2,1) forwards; transform:scale(0); }
+  .circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); }
+  .circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
   @keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
 
-  /* Галочка — статично */
+  /* Р“Р°Р»РѕС‡РєР° вЂ” СЃС‚Р°С‚РёС‡РЅРѕ */
   .tick{ width:14px; height:14px; display:block; }
   .tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
   .done .circle{ background:var(--accent); border-color:var(--accent); }
 
-  /* Текст + placeholder */
+  /* РўРµРєСЃС‚ + placeholder СЃ РџР›РђР’РќР«Рњ РїРѕСЏРІР»РµРЅРёРµРј */
   .textwrap{ position:relative; flex:1; }
   .task-text{
     position:relative;
@@ -106,6 +79,7 @@
     outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
     padding:2px 0 4px;
   }
+  /* РџСЃРµРІРґРѕ-РїР»РµР№СЃС…РѕР»РґРµСЂ РІСЃРµРіРґР° РµСЃС‚СЊ, РЅРѕ РїСЂРѕР·СЂР°С‡РµРЅ; РїСЂРё .empty вЂ” РїР»Р°РІРЅС‹Р№ fade-in */
   .task-text::before{
     content: attr(data-placeholder);
     position:absolute; left:0; top:0;
@@ -116,7 +90,7 @@
   .task-text.empty::before{ opacity:1; transform: translateY(0); }
   .done .task-text{ color:var(--muted); }
 
-  /* Перечёркивание (SVG) */
+  /* РџРµСЂРµС‡С‘СЂРєРёРІР°РЅРёРµ РїРѕ СЂРµР°Р»СЊРЅРѕРјСѓ С‚РµРєСЃС‚Сѓ (SVG), Y РёР· РјРµС‚СЂРёРє С€СЂРёС„С‚Р° */
   .strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
   .strike-line{
     stroke: currentColor; stroke-width:1; stroke-linecap:round;
@@ -124,7 +98,7 @@
     transition: stroke-dashoffset 220ms ease-out; opacity:.95;
   }
 
-  /* Нижний док */
+  /* РќРёР¶РЅРёР№ РґРѕРє вЂ” Р±РµР»С‹Р№, РїСЂСЏРјРѕСѓРіРѕР»СЊРЅС‹Р№ */
   .bottomDock{
     position:absolute; left:16px; right:16px; bottom:calc(20px + env(safe-area-inset-bottom));
     background:#fff; border-radius:0; padding:10px 12px;
@@ -133,12 +107,12 @@
   }
   .brand{ font-family:"Fredoka",system-ui,-apple-system,sans-serif; font-weight:700; font-size:22px; letter-spacing:.5px; color:var(--brand); user-select:none; }
 
-  /* FAB */
+  /* В«+В» вЂ” РєСЂСѓРіР»С‹Р№ */
   .fab{
     width:54px; height:54px; border-radius:50%;
     background:var(--accent); color:#fff; font-size:32px; line-height:0;
     border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    box-shadow:0 6px 12px rgba(0,0,0,16);
+    box-shadow:0 6px 12px rgba(0,0,0,.16);
     will-change:transform, box-shadow; transition: transform 120ms ease, box-shadow 120ms ease;
   }
   .fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.98); }
@@ -151,12 +125,12 @@
     <div class="phone">
       <div class="statusbar">
         <div id="time">9:41</div>
-        <div style="width:40px; text-align:right;">📶 🔋</div>
+        <div style="width:40px; text-align:right;">рџ“¶ рџ”‹</div>
         <div class="island"></div>
       </div>
 
       <div class="app">
-        <div class="header" id="dayHeader">Среда</div>
+        <div class="header" id="dayHeader">РЎСЂРµРґР°</div>
 
         <ul id="tasks"></ul>
 
@@ -169,7 +143,7 @@
   </div>
 
 <script>
-  /* Время */
+  /* Р’СЂРµРјСЏ */
   function updateTime(){
     const now = new Date();
     let h = now.getHours(), m = now.getMinutes();
@@ -178,7 +152,7 @@
   }
   setInterval(updateTime, 1000); updateTime();
 
-  /* Хранилище */
+  /* РҐСЂР°РЅРёР»РёС‰Рµ */
   const KEY='dodid_tasks_v1', START_TASKS=3;
   let tasks=[];
   const raw=localStorage.getItem(KEY);
@@ -190,7 +164,7 @@
   const addBtn=document.getElementById('addBtn');
   let scrollHideTimer=null;
 
-  /* Показ тонкой полосы только во время скролла */
+  /* РџРѕРєР°Р· РЅР°С‚РёРІРЅРѕР№ С‚РѕРЅРєРѕР№ РїРѕР»РѕСЃС‹ С‚РѕР»СЊРєРѕ РІРѕ РІСЂРµРјСЏ РЎР’РћР•Р“Рћ СЃРєСЂРѕР»Р»Р° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ */
   function tempShowScrollbar(){
     list.classList.add('scrolling');
     clearTimeout(scrollHideTimer);
@@ -198,12 +172,7 @@
   }
   list.addEventListener('scroll', tempShowScrollbar, {passive:true});
 
-  /* Не позволяем странице перехватывать тач-скролл вне списка */
-  document.addEventListener('touchmove', (e)=>{
-    if(!e.target.closest('#tasks')) e.preventDefault();
-  }, {passive:false});
-
-  /* Галочка (статично) */
+  /* Р“Р°Р»РѕС‡РєР° (СЃС‚Р°С‚РёС‡РЅРѕ) */
   function makeTickSVGStatic(){
     const svgNS='http://www.w3.org/2000/svg';
     const svg=document.createElementNS(svgNS,'svg');
@@ -213,7 +182,7 @@
     svg.appendChild(p1); svg.appendChild(p2); return svg;
   }
 
-  /* Метрики шрифта для зачёркивания */
+  /* РњРµС‚СЂРёРєРё С€СЂРёС„С‚Р° РґР»СЏ С‚РѕС‡РЅРѕРіРѕ Y Р·Р°С‡С‘СЂРєРёРІР°РЅРёСЏ (РїРѕ РєРёСЂРёР»Р»РёС†Рµ) */
   let fontMetricsCache = null;
   function computeFontMetricsFor(el){
     const cs = getComputedStyle(el);
@@ -229,7 +198,7 @@
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     ctx.font = font;
-    const sample = 'кенгшзхываполжэячсмитью';
+    const sample = 'РєРµРЅРіС€Р·С…С‹РІР°РїРѕР»Р¶СЌСЏС‡СЃРјРёС‚СЊСЋ';
     const m = ctx.measureText(sample);
     const ascent  = m.actualBoundingBoxAscent || 0;
     const descent = m.actualBoundingBoxDescent || 0;
@@ -246,7 +215,7 @@
     if((el.textContent||'').trim()==='') el.classList.add('empty'); else el.classList.remove('empty');
   }
 
-  /* Перечёркивание */
+  /* РџРµСЂРµС‡С‘СЂРєРёРІР°РЅРёРµ: СЃС‚СЂРѕРёРј Р»РёРЅРёРё РїРѕ РєР°Р¶РґРѕР№ РІРёР·СѓР°Р»СЊРЅРѕР№ СЃС‚СЂРѕРєРµ */
   function buildStrike(textWrap, animate=true){
     const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
     const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
@@ -265,7 +234,7 @@
     svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
 
     const metrics = getFontMetrics(textEl);
-    const fallbackRatio = 0.56;
+    const fallbackRatio = 0.56; // РµСЃР»Рё РјРµС‚СЂРёРє РЅРµС‚
 
     rects.forEach(r=>{
       const x1 = r.left - parentRect.left;
@@ -276,7 +245,7 @@
       let yLocal;
       if(metrics){
         const baseline = (r.bottom - parentRect.top) - metrics.descent;
-        const xHeight  = metrics.ascent; // приближение
+        const xHeight  = metrics.ascent; // РїСЂРёР±Р»РёР¶РµРЅРёРµ
         yLocal = baseline - (xHeight / 2);
       }else{
         yLocal = (r.top - parentRect.top) + r.height * fallbackRatio;
@@ -297,7 +266,7 @@
     textWrap.appendChild(svg);
   }
 
-  /* Рендер */
+  /* Р РµРЅРґРµСЂ */
   function render(){
     list.innerHTML='';
 
@@ -316,7 +285,7 @@
       const textWrap=document.createElement('div'); textWrap.className='textwrap';
       const text=document.createElement('div');
       text.className='task-text'; text.contentEditable='true'; text.spellcheck=false;
-      text.dataset.placeholder='Новая задача…'; text.textContent=t.text||'';
+      text.dataset.placeholder='РќРѕРІР°СЏ Р·Р°РґР°С‡Р°вЂ¦'; text.textContent=t.text||'';
       syncEmptyClass(text);
 
       textWrap.appendChild(text);
@@ -344,7 +313,7 @@
         if(t.done) buildStrike(textWrap, false);
       });
 
-      /* Удаление пустой строки */
+      // РЈРґР°Р»РµРЅРёРµ РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРё Backspace/Delete вЂ” СЂР°Р·СЂРµС€РµРЅРѕ РґР»СЏ Р»СЋР±РѕР№ СЃС‚СЂРѕРєРё
       text.addEventListener('keydown',(e)=>{
         const val=(text.textContent||'').trim();
         if((e.key==='Backspace'||e.key==='Delete') && val===''){
@@ -355,9 +324,7 @@
           const targetLi=list.children[Math.min(nextIndex, list.children.length-2)];
           if(targetLi){
             const ti=targetLi.querySelector('.task-text');
-            if(ti){
-              try{ ti.focus({preventScroll:true}); }catch{ ti.focus(); }
-            }
+            if(ti){ ti.focus(); /* Р±РµР· СЃРєСЂРѕР»Р»Р° */ }
           }
         }
       });
@@ -368,18 +335,19 @@
     const spacer=document.createElement('li'); spacer.className='scroll-spacer'; spacer.setAttribute('aria-hidden','true'); list.appendChild(spacer);
   }
 
-  /* Добавление новой задачи — фокус без прокрутки */
+  /* Р”РћР‘РђР’Р›Р•РќРР• РќРћР’РћР™ Р—РђР”РђР§Р вЂ” РІРѕРѕР±С‰Рµ Р±РµР· РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ СЃРєСЂРѕР»Р»Р° */
   function addTask(){
     tasks.push({text:'',done:false}); save(); render();
 
-    const lastLi=list.querySelector('li:nth-last-child(2)'); // последняя реальная
+    const lastLi=list.querySelector('li:nth-last-child(2)'); // РїРѕСЃР»РµРґРЅСЏСЏ СЂРµР°Р»СЊРЅР°СЏ
     if(lastLi){
       const c = lastLi.querySelector('.circle');
       const tx = lastLi.querySelector('.task-text');
 
       if(c){ c.classList.add('born'); setTimeout(()=>c.classList.remove('born'), 800); }
       if(tx){
-        try{ tx.focus({preventScroll:true}); }catch{ tx.focus(); }
+        tx.focus();
+        // РјСЏРіРєРѕРµ РїРѕСЏРІР»РµРЅРёРµ РїР»РµР№СЃС…РѕР»РґРµСЂР° Сѓ С‚РѕР»СЊРєРѕ С‡С‚Рѕ РґРѕР±Р°РІР»РµРЅРЅРѕР№ РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРё
         tx.classList.add('empty');
         tx.classList.add('ph-anim-start');
         requestAnimationFrame(()=>{
@@ -387,8 +355,12 @@
           setTimeout(()=> tx.classList.remove('ph-anim-start','ph-appear'), 260);
         });
       }
+      /* РќРРљРђРљРћР“Рћ scrollTo/scrollIntoView */
     }
   }
+
+  // РєР»Р°СЃСЃС‹ РґР»СЏ СЂСѓС‡РЅРѕРіРѕ Р·Р°РїСѓСЃРєР° Р°РЅРёРјР°С†РёРё РїР»РµР№СЃС…РѕР»РґРµСЂР° (РґРѕР±Р°РІР»СЏСЋС‚СЃСЏ РІ addTask)
+  // (CSS Р±РµСЂС‘С‚ РїРµСЂРµС…РѕРґС‹ РёР· .task-text::before Рё .task-text.empty::before)
 
   addBtn.addEventListener('pointerdown', ()=> addBtn.classList.add('pressed'));
   addBtn.addEventListener('pointerup',   ()=> addBtn.classList.remove('pressed'));
@@ -398,15 +370,13 @@
 
   render();
 
-  /* Автофокус на первую пустую — без скролла */
+  // Р°РІС‚РѕС„РѕРєСѓСЃ РЅР° РїРµСЂРІСѓСЋ РїСѓСЃС‚СѓСЋ вЂ” Р±РµР· СЃРєСЂРѕР»Р»Р°
   (function(){
     const first=Array.from(document.querySelectorAll('.task-text')).find(n=>(n.textContent||'').trim()==='');
-    if(first){
-      try{ first.focus({preventScroll:true}); }catch{ first.focus(); }
-    }
+    if(first){ first.focus(); /* РЅРµ СЃРєСЂРѕР»Р»РёРј */ }
   })();
 
-  /* Пересчёт зачёркивания при ресайзе */
+  // РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ Р·Р°С‡С‘СЂРєРёРІР°РЅРёРµ РїСЂРё СЂРµСЃР°Р№Р·Рµ
   window.addEventListener('resize', ()=>{
     document.querySelectorAll('li').forEach(li=>{
       if(li.classList.contains('done')){
