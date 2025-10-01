@@ -22,7 +22,7 @@
     --brand:#8a8a8a;
     --phone-w:390px; --phone-h:844px;
 
-    --pop-duration:520ms; /* РјРµРґР»РµРЅРЅРµРµ СЂРѕР¶РґРµРЅРёРµ РєСЂСѓР¶РєР° */
+    --pop-duration:520ms; /* медленнее рождение кружка */
   }
 
   body{ font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:#fff; color:var(--ink); margin:0; }
@@ -37,24 +37,24 @@
 
   .header{ font-size:32px; font-weight:800; margin-bottom:10px; }
 
-  /* РЎРїРёСЃРѕРє: РЅР°С‚РёРІРЅР°СЏ РїРѕР»РѕСЃР° РџР РђР’Рћ, РѕС‡РµРЅСЊ С‚РѕРЅРєР°СЏ, Р±РµР· СЃС‚СЂРµР»РѕРє; РІРёРґРЅР° С‚РѕР»СЊРєРѕ РїСЂРё СЃРєСЂРѕР»Р»Рµ */
+  /* Список: нативная полоса ПРАВО, очень тонкая, без стрелок; видна только при скролле */
   #tasks{
     list-style:none; margin:0; padding:0; flex:1; overflow:auto;
-    scrollbar-width: none; /* Firefox: СЃРєСЂС‹С‚Р° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ */
+    scrollbar-width: none; /* Firefox: скрыта по умолчанию */
   }
   #tasks.scrolling{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.22) transparent; }
-  #tasks::-webkit-scrollbar{ width:1px; height:1px; }                 /* СЃСѓРїРµСЂ-С‚РѕРЅРєР°СЏ */
-  #tasks::-webkit-scrollbar-button{ display:none; width:0; height:0; } /* Р±РµР· СЃС‚СЂРµР»РѕРє */
+  #tasks::-webkit-scrollbar{ width:1px; height:1px; }                 /* супер-тонкая */
+  #tasks::-webkit-scrollbar-button{ display:none; width:0; height:0; } /* без стрелок */
   #tasks::-webkit-scrollbar-track{ background:transparent; }
   #tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); border-radius:0; }
   #tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
 
   .scroll-spacer{ height:45vh; }
 
-  /* РЎС‚СЂРѕРєР° вЂ” РєРѕРјРїР°РєС‚РЅР°СЏ */
+  /* Строка — компактная */
   li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-height:1.25; }
 
-  /* РљСЂСѓР¶РѕРє */
+  /* Кружок */
   .circle{
     width:20px; height:20px; border:2px solid var(--ring);
     border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
@@ -66,12 +66,12 @@
   .circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
   @keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
 
-  /* Р“Р°Р»РѕС‡РєР° вЂ” СЃС‚Р°С‚РёС‡РЅРѕ */
+  /* Галочка — статично */
   .tick{ width:14px; height:14px; display:block; }
   .tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
   .done .circle{ background:var(--accent); border-color:var(--accent); }
 
-  /* РўРµРєСЃС‚ + placeholder СЃ РџР›РђР’РќР«Рњ РїРѕСЏРІР»РµРЅРёРµРј */
+  /* Текст + placeholder с ПЛАВНЫМ появлением */
   .textwrap{ position:relative; flex:1; }
   .task-text{
     position:relative;
@@ -79,7 +79,7 @@
     outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
     padding:2px 0 4px;
   }
-  /* РџСЃРµРІРґРѕ-РїР»РµР№СЃС…РѕР»РґРµСЂ РІСЃРµРіРґР° РµСЃС‚СЊ, РЅРѕ РїСЂРѕР·СЂР°С‡РµРЅ; РїСЂРё .empty вЂ” РїР»Р°РІРЅС‹Р№ fade-in */
+  /* Псевдо-плейсхолдер всегда есть, но прозрачен; при .empty — плавный fade-in */
   .task-text::before{
     content: attr(data-placeholder);
     position:absolute; left:0; top:0;
@@ -90,7 +90,7 @@
   .task-text.empty::before{ opacity:1; transform: translateY(0); }
   .done .task-text{ color:var(--muted); }
 
-  /* РџРµСЂРµС‡С‘СЂРєРёРІР°РЅРёРµ РїРѕ СЂРµР°Р»СЊРЅРѕРјСѓ С‚РµРєСЃС‚Сѓ (SVG), Y РёР· РјРµС‚СЂРёРє С€СЂРёС„С‚Р° */
+  /* Перечёркивание по реальному тексту (SVG), Y из метрик шрифта */
   .strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
   .strike-line{
     stroke: currentColor; stroke-width:1; stroke-linecap:round;
@@ -98,7 +98,7 @@
     transition: stroke-dashoffset 220ms ease-out; opacity:.95;
   }
 
-  /* РќРёР¶РЅРёР№ РґРѕРє вЂ” Р±РµР»С‹Р№, РїСЂСЏРјРѕСѓРіРѕР»СЊРЅС‹Р№ */
+  /* Нижний док — белый, прямоугольный */
   .bottomDock{
     position:absolute; left:16px; right:16px; bottom:calc(20px + env(safe-area-inset-bottom));
     background:#fff; border-radius:0; padding:10px 12px;
@@ -107,7 +107,7 @@
   }
   .brand{ font-family:"Fredoka",system-ui,-apple-system,sans-serif; font-weight:700; font-size:22px; letter-spacing:.5px; color:var(--brand); user-select:none; }
 
-  /* В«+В» вЂ” РєСЂСѓРіР»С‹Р№ */
+  /* «+» — круглый */
   .fab{
     width:54px; height:54px; border-radius:50%;
     background:var(--accent); color:#fff; font-size:32px; line-height:0;
@@ -125,12 +125,12 @@
     <div class="phone">
       <div class="statusbar">
         <div id="time">9:41</div>
-        <div style="width:40px; text-align:right;">рџ“¶ рџ”‹</div>
+        <div style="width:40px; text-align:right;">📶 🔋</div>
         <div class="island"></div>
       </div>
 
       <div class="app">
-        <div class="header" id="dayHeader">РЎСЂРµРґР°</div>
+        <div class="header" id="dayHeader">Среда</div>
 
         <ul id="tasks"></ul>
 
@@ -143,7 +143,7 @@
   </div>
 
 <script>
-  /* Р’СЂРµРјСЏ */
+  /* Время */
   function updateTime(){
     const now = new Date();
     let h = now.getHours(), m = now.getMinutes();
@@ -152,7 +152,7 @@
   }
   setInterval(updateTime, 1000); updateTime();
 
-  /* РҐСЂР°РЅРёР»РёС‰Рµ */
+  /* Хранилище */
   const KEY='dodid_tasks_v1', START_TASKS=3;
   let tasks=[];
   const raw=localStorage.getItem(KEY);
@@ -164,7 +164,7 @@
   const addBtn=document.getElementById('addBtn');
   let scrollHideTimer=null;
 
-  /* РџРѕРєР°Р· РЅР°С‚РёРІРЅРѕР№ С‚РѕРЅРєРѕР№ РїРѕР»РѕСЃС‹ С‚РѕР»СЊРєРѕ РІРѕ РІСЂРµРјСЏ РЎР’РћР•Р“Рћ СЃРєСЂРѕР»Р»Р° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ */
+  /* Показ нативной тонкой полосы только во время СВОЕГО скролла пользователя */
   function tempShowScrollbar(){
     list.classList.add('scrolling');
     clearTimeout(scrollHideTimer);
@@ -172,7 +172,7 @@
   }
   list.addEventListener('scroll', tempShowScrollbar, {passive:true});
 
-  /* Р“Р°Р»РѕС‡РєР° (СЃС‚Р°С‚РёС‡РЅРѕ) */
+  /* Галочка (статично) */
   function makeTickSVGStatic(){
     const svgNS='http://www.w3.org/2000/svg';
     const svg=document.createElementNS(svgNS,'svg');
@@ -182,7 +182,7 @@
     svg.appendChild(p1); svg.appendChild(p2); return svg;
   }
 
-  /* РњРµС‚СЂРёРєРё С€СЂРёС„С‚Р° РґР»СЏ С‚РѕС‡РЅРѕРіРѕ Y Р·Р°С‡С‘СЂРєРёРІР°РЅРёСЏ (РїРѕ РєРёСЂРёР»Р»РёС†Рµ) */
+  /* Метрики шрифта для точного Y зачёркивания (по кириллице) */
   let fontMetricsCache = null;
   function computeFontMetricsFor(el){
     const cs = getComputedStyle(el);
@@ -198,7 +198,7 @@
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     ctx.font = font;
-    const sample = 'РєРµРЅРіС€Р·С…С‹РІР°РїРѕР»Р¶СЌСЏС‡СЃРјРёС‚СЊСЋ';
+    const sample = 'кенгшзхываполжэячсмитью';
     const m = ctx.measureText(sample);
     const ascent  = m.actualBoundingBoxAscent || 0;
     const descent = m.actualBoundingBoxDescent || 0;
@@ -215,7 +215,7 @@
     if((el.textContent||'').trim()==='') el.classList.add('empty'); else el.classList.remove('empty');
   }
 
-  /* РџРµСЂРµС‡С‘СЂРєРёРІР°РЅРёРµ: СЃС‚СЂРѕРёРј Р»РёРЅРёРё РїРѕ РєР°Р¶РґРѕР№ РІРёР·СѓР°Р»СЊРЅРѕР№ СЃС‚СЂРѕРєРµ */
+  /* Перечёркивание: строим линии по каждой визуальной строке */
   function buildStrike(textWrap, animate=true){
     const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
     const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
@@ -234,7 +234,7 @@
     svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
 
     const metrics = getFontMetrics(textEl);
-    const fallbackRatio = 0.56; // РµСЃР»Рё РјРµС‚СЂРёРє РЅРµС‚
+    const fallbackRatio = 0.56; // если метрик нет
 
     rects.forEach(r=>{
       const x1 = r.left - parentRect.left;
@@ -245,7 +245,7 @@
       let yLocal;
       if(metrics){
         const baseline = (r.bottom - parentRect.top) - metrics.descent;
-        const xHeight  = metrics.ascent; // РїСЂРёР±Р»РёР¶РµРЅРёРµ
+        const xHeight  = metrics.ascent; // приближение
         yLocal = baseline - (xHeight / 2);
       }else{
         yLocal = (r.top - parentRect.top) + r.height * fallbackRatio;
@@ -266,7 +266,7 @@
     textWrap.appendChild(svg);
   }
 
-  /* Р РµРЅРґРµСЂ */
+  /* Рендер */
   function render(){
     list.innerHTML='';
 
@@ -285,7 +285,7 @@
       const textWrap=document.createElement('div'); textWrap.className='textwrap';
       const text=document.createElement('div');
       text.className='task-text'; text.contentEditable='true'; text.spellcheck=false;
-      text.dataset.placeholder='РќРѕРІР°СЏ Р·Р°РґР°С‡Р°вЂ¦'; text.textContent=t.text||'';
+      text.dataset.placeholder='Новая задача…'; text.textContent=t.text||'';
       syncEmptyClass(text);
 
       textWrap.appendChild(text);
@@ -313,7 +313,7 @@
         if(t.done) buildStrike(textWrap, false);
       });
 
-      // РЈРґР°Р»РµРЅРёРµ РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРё Backspace/Delete вЂ” СЂР°Р·СЂРµС€РµРЅРѕ РґР»СЏ Р»СЋР±РѕР№ СЃС‚СЂРѕРєРё
+      // Удаление пустой строки Backspace/Delete — разрешено для любой строки
       text.addEventListener('keydown',(e)=>{
         const val=(text.textContent||'').trim();
         if((e.key==='Backspace'||e.key==='Delete') && val===''){
@@ -324,7 +324,7 @@
           const targetLi=list.children[Math.min(nextIndex, list.children.length-2)];
           if(targetLi){
             const ti=targetLi.querySelector('.task-text');
-            if(ti){ ti.focus(); /* Р±РµР· СЃРєСЂРѕР»Р»Р° */ }
+            if(ti){ ti.focus(); /* без скролла */ }
           }
         }
       });
@@ -335,11 +335,11 @@
     const spacer=document.createElement('li'); spacer.className='scroll-spacer'; spacer.setAttribute('aria-hidden','true'); list.appendChild(spacer);
   }
 
-  /* Р”РћР‘РђР’Р›Р•РќРР• РќРћР’РћР™ Р—РђР”РђР§Р вЂ” РІРѕРѕР±С‰Рµ Р±РµР· РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ СЃРєСЂРѕР»Р»Р° */
+  /* ДОБАВЛЕНИЕ НОВОЙ ЗАДАЧИ — вообще без программного скролла */
   function addTask(){
     tasks.push({text:'',done:false}); save(); render();
 
-    const lastLi=list.querySelector('li:nth-last-child(2)'); // РїРѕСЃР»РµРґРЅСЏСЏ СЂРµР°Р»СЊРЅР°СЏ
+    const lastLi=list.querySelector('li:nth-last-child(2)'); // последняя реальная
     if(lastLi){
       const c = lastLi.querySelector('.circle');
       const tx = lastLi.querySelector('.task-text');
@@ -347,7 +347,7 @@
       if(c){ c.classList.add('born'); setTimeout(()=>c.classList.remove('born'), 800); }
       if(tx){
         tx.focus();
-        // РјСЏРіРєРѕРµ РїРѕСЏРІР»РµРЅРёРµ РїР»РµР№СЃС…РѕР»РґРµСЂР° Сѓ С‚РѕР»СЊРєРѕ С‡С‚Рѕ РґРѕР±Р°РІР»РµРЅРЅРѕР№ РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРё
+        // мягкое появление плейсхолдера у только что добавленной пустой строки
         tx.classList.add('empty');
         tx.classList.add('ph-anim-start');
         requestAnimationFrame(()=>{
@@ -355,12 +355,12 @@
           setTimeout(()=> tx.classList.remove('ph-anim-start','ph-appear'), 260);
         });
       }
-      /* РќРРљРђРљРћР“Рћ scrollTo/scrollIntoView */
+      /* НИКАКОГО scrollTo/scrollIntoView */
     }
   }
 
-  // РєР»Р°СЃСЃС‹ РґР»СЏ СЂСѓС‡РЅРѕРіРѕ Р·Р°РїСѓСЃРєР° Р°РЅРёРјР°С†РёРё РїР»РµР№СЃС…РѕР»РґРµСЂР° (РґРѕР±Р°РІР»СЏСЋС‚СЃСЏ РІ addTask)
-  // (CSS Р±РµСЂС‘С‚ РїРµСЂРµС…РѕРґС‹ РёР· .task-text::before Рё .task-text.empty::before)
+  // классы для ручного запуска анимации плейсхолдера (добавляются в addTask)
+  // (CSS берёт переходы из .task-text::before и .task-text.empty::before)
 
   addBtn.addEventListener('pointerdown', ()=> addBtn.classList.add('pressed'));
   addBtn.addEventListener('pointerup',   ()=> addBtn.classList.remove('pressed'));
@@ -370,13 +370,13 @@
 
   render();
 
-  // Р°РІС‚РѕС„РѕРєСѓСЃ РЅР° РїРµСЂРІСѓСЋ РїСѓСЃС‚СѓСЋ вЂ” Р±РµР· СЃРєСЂРѕР»Р»Р°
+  // автофокус на первую пустую — без скролла
   (function(){
     const first=Array.from(document.querySelectorAll('.task-text')).find(n=>(n.textContent||'').trim()==='');
-    if(first){ first.focus(); /* РЅРµ СЃРєСЂРѕР»Р»РёРј */ }
+    if(first){ first.focus(); /* не скроллим */ }
   })();
 
-  // РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ Р·Р°С‡С‘СЂРєРёРІР°РЅРёРµ РїСЂРё СЂРµСЃР°Р№Р·Рµ
+  // пересчитать зачёркивание при ресайзе
   window.addEventListener('resize', ()=>{
     document.querySelectorAll('li').forEach(li=>{
       if(li.classList.contains('done')){
