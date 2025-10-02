@@ -1,0 +1,162 @@
+/* ============================================================================
+  styles (3).css — Layout + Effects
+  - Fixed top header (#header) and fixed bottom dock (#dock)
+  - The ONLY scrollable area is #tasks
+  - Completed items: gray + strike SVG overlay (animated)
+  - Dock rises with keyboard (via --kb and inline transform from JS)
+============================================================================ */
+
+:root{
+  /* Colors */
+  --accent:#ffd000;    /* brand yellow for the add button */
+  --ink:#000;          /* main text color */
+  --muted:#777;        /* secondary/placeholder text */
+  --ring:#aaa;         /* thin borders */
+  --brand:#8a8a8a;     /* gray for brand wordmark */
+
+  /* Geometry */
+  --header-h:64px;
+  --dock-h:78px;
+
+  /* Keyboard offset (set by script (2).js) */
+  --kb:0px;
+
+  /* Animations */
+  --pop-duration:520ms;
+}
+
+/* Page is "hard-fixed": no page scroll; only #tasks scrolls */
+html, body {
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+  margin:0;
+  background:#fff;
+  color:var(--ink);
+  font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;
+}
+
+/* Top bar */
+#header{
+  position:fixed; left:0; right:0; top:0;
+  height:var(--header-h);
+  background:#fff;
+  display:flex; align-items:center;
+  gap:12px;
+  padding:0 16px;
+  border-bottom:1px solid rgba(0,0,0,.06);
+  z-index:10;
+}
+#header .brand{
+  font-weight:800;
+  letter-spacing:.4px;
+  color:var(--brand);
+}
+#header .weekday{
+  margin-left:auto;   /* brand on left, weekday on right */
+  font-weight:600;
+}
+
+/* Bottom dock — fixed to bottom; lifted by --kb */
+#dock{
+  position:fixed; left:0; right:0; bottom:0;
+  height:calc(var(--dock-h) + var(--kb));
+  background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  gap:12px;
+  padding:0 16px;
+  border-top:1px solid rgba(0,0,0,.06);
+  z-index:10;
+  transition:transform .25s ease;   /* JS applies translateY when keyboard shows */
+}
+#dock .dock-brand{
+  color:var(--brand);
+  font-weight:700;
+  letter-spacing:.4px;
+}
+
+/* Add button (yellow circle + white plus) */
+#addBtn.fab{
+  appearance:none; border:none; cursor:pointer;
+  width:56px; height:56px; border-radius:50%;
+  background:var(--accent);
+  display:inline-flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+#addBtn.fab:active{ transform:scale(.98); filter:brightness(.98); box-shadow:0 4px 12px rgba(0,0,0,.12); }
+#addBtn .plus{
+  width:26px; height:26px;
+}
+#addBtn .plus path{
+  stroke:#fff; stroke-width:3.2; stroke-linecap:round;
+  fill:none;
+}
+
+/* Scroll area fills the space between header and dock */
+#tasks{
+  position:absolute; left:0; right:0;
+  top:var(--header-h);
+  bottom:var(--dock-h); /* base dock height; actual keyboard lift is via transform */
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:8px 12px;
+  list-style:none; margin:0;        /* for UL */
+}
+
+/* Thin scrollbar visible only while scrolling (JS toggles .scrolling) */
+#tasks{ scrollbar-width:none; }
+#tasks::-webkit-scrollbar{ width:3px; height:3px; }
+#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); border-radius:2px; }
+#tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
+
+/* One task row */
+#tasks li{
+  position:relative;       /* needed for strike SVG overlay */
+  display:flex; align-items:flex-start;
+  gap:10px;
+  padding:10px 6px;
+  font-size:18px; line-height:1.25;
+  border-bottom:1px solid rgba(0,0,0,.04);
+  transition:background .15s ease,color .2s ease;
+}
+#tasks li:hover{ background:rgba(0,0,0,.02); }
+
+/* Left icon (ring + tick) */
+#tasks li .tick{
+  width:22px; height:22px; flex:0 0 22px; display:block;
+}
+.tick-ring{
+  fill:none; stroke:#c9c9c9; stroke-width:2;
+}
+.tick-mark{
+  fill:none; stroke:#2f9d27; stroke-width:2.5;
+  stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:18; stroke-dashoffset:18;
+  transition:stroke-dashoffset .22s ease;
+}
+#tasks li.done .tick-mark{ stroke-dashoffset:0; }
+
+/* Task text */
+#tasks li .text{
+  flex:1 1 auto;
+  outline:none;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+#tasks li .text.empty{ color:var(--muted); opacity:.7; }
+
+/* Done state */
+#tasks li.done{ color:#9aa0a6; }
+
+/* Strike SVG overlay */
+#tasks li svg.strike{
+  position:absolute; left:0; top:0; width:100%; height:100%;
+  pointer-events:none;
+}
+#tasks li .strike-line{
+  stroke:#8a8a8a; stroke-width:2; stroke-linecap:round;
+  opacity:0; stroke-dasharray:4 4;
+  animation:strikeIn .18s ease forwards;
+}
+@keyframes strikeIn{ from{opacity:0;} to{opacity:1;} }
