@@ -197,3 +197,26 @@ if(window.visualViewport){
   window.addEventListener('orientationchange', updateDockForKeyboard);
   updateDockForKeyboard();
 }
+/* ==== Анти-bounce для iOS (чтоб шапка не «ездила») ==== */
+(function lockIOSRubberBand(){
+  const scroller = document.getElementById('tasks');
+  if (!scroller) return;
+
+  // Если список короче экрана — запрещаем «тянуть» страницу
+  document.addEventListener('touchmove', (e)=>{
+    if (!e.target.closest('#tasks')) e.preventDefault();
+  }, { passive: false });
+
+  // На границах списка держим его в пределах (1px хак)
+  scroller.addEventListener('touchstart', ()=>{
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    if (max <= 0) return;                 // нечего скроллить
+    if (scroller.scrollTop <= 0) scroller.scrollTop = 1;
+    else if (scroller.scrollTop >= max) scroller.scrollTop = max - 1;
+  }, { passive: true });
+
+  // Если контента мало, блокируем «пружину» внутри самого списка
+  scroller.addEventListener('touchmove', (e)=>{
+    if (scroller.scrollHeight <= scroller.clientHeight) e.preventDefault();
+  }, { passive: false });
+})();
