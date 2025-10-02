@@ -305,3 +305,20 @@
     };
   }
 })();
+/* ===== Move bottom dock with the iOS keyboard ===== */
+const dock = document.querySelector('.bottomDock');
+
+function updateDockForKeyboard(){
+  const vv = window.visualViewport;
+  if (!vv || !dock) return;
+
+  const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
+  dock.style.transform = hidden ? `translateY(${-hidden}px)` : 'translateY(0)';
+}
+
+if (window.visualViewport){
+  visualViewport.addEventListener('resize', updateDockForKeyboard);
+  visualViewport.addEventListener('scroll',  updateDockForKeyboard);
+  window.addEventListener('orientationchange', updateDockForKeyboard);
+  updateDockForKeyboard();
+}
