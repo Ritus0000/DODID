@@ -1,322 +1,197 @@
-/* Время */
-  function updateTime(){
-    const now = new Date();
-    let h = now.getHours(), m = now.getMinutes();
-    if(m < 10) m = "0"+m;
-    document.getElementById("time").textContent = h + ":" + m;
-  }
-  setInterval(updateTime, 1000); updateTime();
+/* ===== День недели (динамически) ===== */
+const ruDays = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+function setDayHeader(d=new Date()){ document.getElementById("dayHeader").textContent = ruDays[d.getDay()]; }
+setDayHeader(); setInterval(setDayHeader, 60_000);
 
-  /* Хранилище */
-  const KEY='dodid_tasks_v1', START_TASKS=3;
-  let tasks=[];
-  const raw=localStorage.getItem(KEY);
-  if(raw===null){ tasks=Array.from({length:START_TASKS},()=>({text:'',done:false})); localStorage.setItem(KEY, JSON.stringify(tasks)); }
-  else{ try{ tasks=JSON.parse(raw)||[] }catch{ tasks=[] } }
-  function save(){ localStorage.setItem(KEY, JSON.stringify(tasks)); }
+/* ===== Локальное хранилище + перенос на новый день ===== */
+const KEY_TASKS='dodid_tasks_v1';
+const KEY_LAST ='dodid_lastDate';
+const START_TASKS=3;
 
-  const list=document.getElementById('tasks');
-  const addBtn=document.getElementById('addBtn');
-  let scrollHideTimer=null;
+let tasks=[];
+try{ tasks=JSON.parse(localStorage.getItem(KEY_TASKS)||'[]')||[] }catch{ tasks=[] }
+if(!tasks.length){ tasks = Array.from({length:START_TASKS},()=>({text:'',done:false})) }
 
-  /* Показ нативной тонкой полосы только во время СВОЕГО скролла пользователя */
-  function tempShowScrollbar(){
-    list.classList.add('scrolling');
-    clearTimeout(scrollHideTimer);
-    scrollHideTimer=setTimeout(()=> list.classList.remove('scrolling'), 800);
-  }
-  list.addEventListener('scroll', tempShowScrollbar, {passive:true});
+function save(){ localStorage.setItem(KEY_TASKS, JSON.stringify(tasks)); }
+function todayKey(d=new Date()){ return d.toDateString(); }
 
-  /* Галочка (статично) */
-  function makeTickSVGStatic(){
-    const svgNS='http://www.w3.org/2000/svg';
-    const svg=document.createElementNS(svgNS,'svg');
-    svg.setAttribute('viewBox','0 0 14 14'); svg.classList.add('tick');
-    const p1=document.createElementNS(svgNS,'path'); p1.setAttribute('d','M3 7 L6 10');
-    const p2=document.createElementNS(svgNS,'path'); p2.setAttribute('d','M6 10 L11 3');
-    svg.appendChild(p1); svg.appendChild(p2); return svg;
-  }
+function rolloverIfNeeded(){
+  const today=todayKey(); const last=localStorage.getItem(KEY_LAST);
+  if(last===today) return;
+  const carried = tasks.filter(t=>!t.done && (t.text||'').trim()!=='').map(t=>({text:t.text,done:false}));
+  tasks = carried.length ? [...carried,{text:'',done:false}] : Array.from({length:START_TASKS},()=>({text:'',done:false}));
+  save(); localStorage.setItem(KEY_LAST, today); render();
+}
+rolloverIfNeeded(); setInterval(rolloverIfNeeded, 60_000);
 
-  /* Метрики шрифта для точного Y зачёркивания (по кириллице) */
-  let fontMetricsCache = null;
-  function computeFontMetricsFor(el){
-    const cs = getComputedStyle(el);
-    let font = cs.font;
-    if(!font || font === 'normal'){
-      const style = cs.fontStyle || 'normal';
-      const weight = cs.fontWeight || '400';
-      const size = cs.fontSize || '18px';
-      const line = cs.lineHeight && cs.lineHeight !== 'normal' ? cs.lineHeight : size;
-      const family = cs.fontFamily || 'Helvetica Neue, Arial, sans-serif';
-      font = `${style} ${weight} ${size}/${line} ${family}`;
-    }
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.font = font;
-    const sample = 'кенгшзхываполжэячсмитью';
-    const m = ctx.measureText(sample);
-    const ascent  = m.actualBoundingBoxAscent || 0;
-    const descent = m.actualBoundingBoxDescent || 0;
-    if(ascent === 0 && descent === 0) return null;
-    return { ascent, descent };
-  }
-  function getFontMetrics(el){
-    if(fontMetricsCache) return fontMetricsCache;
-    fontMetricsCache = computeFontMetricsFor(el);
-    return fontMetricsCache;
-  }
+/* ===== DOM ===== */
+const list = document.getElementById('tasks');
+const addBtn = document.getElementById('addBtn');
 
-  function syncEmptyClass(el){
-    if((el.textContent||'').trim()==='') el.classList.add('empty'); else el.classList.remove('empty');
-  }
+/* Показ тонкой полоски только во время скролла */
+let hideTimer=null;
+list.addEventListener('scroll', ()=>{
+  list.classList.add('scrolling');
+  clearTimeout(hideTimer); hideTimer=setTimeout(()=>list.classList.remove('scrolling'), 800);
+}, {passive:true});
 
-  /* Перечёркивание: строим линии по каждой визуальной строке */
-  function buildStrike(textWrap, animate=true){
-    const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
-    const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
+/* ===== Помощники ===== */
+function syncEmpty(el){ (el.textContent||'').trim()==='' ? el.classList.add('empty') : el.classList.remove('empty'); }
+function makeTick(){
+  const s='http://www.w3.org/2000/svg', svg=document.createElementNS(s,'svg');
+  svg.setAttribute('viewBox','0 0 14 14'); svg.classList.add('tick');
+  const p1=document.createElementNS(s,'path'); p1.setAttribute('d','M3 7 L6 10');
+  const p2=document.createElementNS(s,'path'); p2.setAttribute('d','M6 10 L11 3');
+  svg.appendChild(p1); svg.appendChild(p2); return svg;
+}
+let fontMetricsCache=null;
+function computeFontMetricsFor(el){
+  const cs=getComputedStyle(el);
+  const style=cs.fontStyle||'normal'; const weight=cs.fontWeight||'400';
+  const size=cs.fontSize||'18px'; const line=cs.lineHeight && cs.lineHeight!=='normal'? cs.lineHeight:size;
+  const family=cs.fontFamily || 'Helvetica Neue, Arial, sans-serif';
+  const font=`${style} ${weight} ${size}/${line} ${family}`;
+  const c=document.createElement('canvas'), ctx=c.getContext('2d');
+  ctx.font=font;
+  const m=ctx.measureText('кенгшзхываполжэячсмитью');
+  const a=m.actualBoundingBoxAscent||0, d=m.actualBoundingBoxDescent||0;
+  return (a||d)? {a,d}:null;
+}
+function getFontMetrics(el){ if(!fontMetricsCache) fontMetricsCache=computeFontMetricsFor(el); return fontMetricsCache; }
 
-    syncEmptyClass(textEl);
+function buildStrike(textWrap, animate=true){
+  const old=textWrap.querySelector('.strike-svg'); if(old) old.remove();
+  const textEl=textWrap.querySelector('.task-text'); if(!textEl) return;
+  syncEmpty(textEl);
 
-    const range = document.createRange(); range.selectNodeContents(textEl);
-    const rects = Array.from(range.getClientRects());
+  const range=document.createRange(); range.selectNodeContents(textEl);
+  const rects=Array.from(range.getClientRects());
 
-    const svgNS='http://www.w3.org/2000/svg';
-    const svg=document.createElementNS(svgNS,'svg'); svg.classList.add('strike-svg');
+  const svgNS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(svgNS,'svg'); svg.classList.add('strike-svg');
 
-    const parentRect=textWrap.getBoundingClientRect();
-    svg.setAttribute('width', parentRect.width);
-    svg.setAttribute('height', parentRect.height);
-    svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
+  const parent=textWrap.getBoundingClientRect();
+  svg.setAttribute('width',parent.width); svg.setAttribute('height',parent.height);
+  svg.setAttribute('viewBox',`0 0 ${parent.width} ${parent.height}`);
 
-    const metrics = getFontMetrics(textEl);
-    const fallbackRatio = 0.56; // если метрик нет
+  const fm=getFontMetrics(textEl); const ratio=0.56;
 
-    rects.forEach(r=>{
-      const x1 = r.left - parentRect.left;
-      const x2 = r.right - parentRect.left;
-      const len = Math.max(0, x2 - x1);
-      if(len <= 0) return;
+  rects.forEach(r=>{
+    const x1=r.left-parent.left, x2=r.right-parent.left, len=Math.max(0,x2-x1);
+    if(len<=0) return;
+    let y;
+    if(fm){ const baseline=(r.bottom-parent.top)-fm.d; const xh=fm.a; y=baseline-(xh/2); }
+    else{ y=(r.top-parent.top)+r.height*ratio; }
 
-      let yLocal;
-      if(metrics){
-        const baseline = (r.bottom - parentRect.top) - metrics.descent;
-        const xHeight  = metrics.ascent; // приближение
-        yLocal = baseline - (xHeight / 2);
-      }else{
-        yLocal = (r.top - parentRect.top) + r.height * fallbackRatio;
-      }
-
-      const line=document.createElementNS(svgNS,'line');
-      line.setAttribute('x1', x1); line.setAttribute('y1', yLocal);
-      line.setAttribute('x2', x2); line.setAttribute('y2', yLocal);
-      line.classList.add('strike-line');
-      line.style.setProperty('--len', `${len}`);
-
-      if(!animate){ line.style.strokeDashoffset=0; line.style.transition='none'; }
-      svg.appendChild(line);
-
-      if(animate){ requestAnimationFrame(()=>{ line.style.strokeDashoffset=0; }); }
-    });
-
-    textWrap.appendChild(svg);
-  }
-
-  /* Рендер */
-  function render(){
-    list.innerHTML='';
-
-    for(let i=0;i<tasks.length;i++){
-      const t=tasks[i];
-      const li=document.createElement('li'); if(t.done) li.classList.add('done');
-
-      const circle=document.createElement('div'); circle.className='circle';
-      if(t.done){ circle.appendChild(makeTickSVGStatic()); }
-
-      circle.addEventListener('pointerdown', ()=> circle.classList.add('touch'));
-      circle.addEventListener('pointerup',   ()=> circle.classList.remove('touch'));
-      circle.addEventListener('pointercancel',()=> circle.classList.remove('touch'));
-      circle.addEventListener('pointerleave', ()=> circle.classList.remove('touch'));
-
-      const textWrap=document.createElement('div'); textWrap.className='textwrap';
-      const text=document.createElement('div');
-      text.className='task-text'; text.contentEditable='true'; text.spellcheck=false;
-      text.dataset.placeholder='Новая задача…'; text.textContent=t.text||'';
-      syncEmptyClass(text);
-
-      textWrap.appendChild(text);
-      li.appendChild(circle);
-      li.appendChild(textWrap);
-      list.appendChild(li);
-
-      circle.addEventListener('click', ()=>{
-        if((text.textContent||'').trim()==='') return;
-        t.done=!t.done; save();
-        if(t.done){
-          li.classList.add('done');
-          const old=circle.querySelector('svg.tick'); if(old) old.remove();
-          circle.appendChild(makeTickSVGStatic());
-          buildStrike(textWrap, true);
-        }else{
-          li.classList.remove('done');
-          const old=circle.querySelector('svg.tick'); if(old) old.remove();
-          const s=textWrap.querySelector('.strike-svg'); if(s) s.remove();
-        }
-      });
-
-      text.addEventListener('input', ()=>{
-        tasks[i].text=text.textContent; save(); syncEmptyClass(text);
-        if(t.done) buildStrike(textWrap, false);
-      });
-
-      // Удаление пустой строки Backspace/Delete — разрешено для любой строки
-      text.addEventListener('keydown',(e)=>{
-        const val=(text.textContent||'').trim();
-        if((e.key==='Backspace'||e.key==='Delete') && val===''){
-          e.preventDefault();
-          const goPrev=(e.key==='Backspace');
-          const nextIndex=goPrev?Math.max(0, i-1):Math.min(tasks.length-1, i+1);
-          tasks.splice(i,1); save(); render();
-          const targetLi=list.children[Math.min(nextIndex, list.children.length-2)];
-          if(targetLi){
-            const ti=targetLi.querySelector('.task-text');
-            if(ti){ ti.focus(); /* без скролла */ }
-          }
-        }
-      });
-
-      if(t.done) buildStrike(textWrap, false);
-    }
-
-    const spacer=document.createElement('li'); spacer.className='scroll-spacer'; spacer.setAttribute('aria-hidden','true'); list.appendChild(spacer);
-  }
-
-  /* ДОБАВЛЕНИЕ НОВОЙ ЗАДАЧИ — вообще без программного скролла */
-  function addTask(){
-    tasks.push({text:'',done:false}); save(); render();
-
-    const lastLi=list.querySelector('li:nth-last-child(2)'); // последняя реальная
-    if(lastLi){
-      const c = lastLi.querySelector('.circle');
-      const tx = lastLi.querySelector('.task-text');
-
-      if(c){ c.classList.add('born'); setTimeout(()=>c.classList.remove('born'), 800); }
-      if(tx){
-        tx.focus();
-        // мягкое появление плейсхолдера у только что добавленной пустой строки
-        tx.classList.add('empty');
-        tx.classList.add('ph-anim-start');
-        requestAnimationFrame(()=>{
-          tx.classList.add('ph-appear');
-          setTimeout(()=> tx.classList.remove('ph-anim-start','ph-appear'), 260);
-        });
-      }
-      /* НИКАКОГО scrollTo/scrollIntoView */
-    }
-  }
-
-  // классы для ручного запуска анимации плейсхолдера (добавляются в addTask)
-  // (CSS берёт переходы из .task-text::before и .task-text.empty::before)
-
-  addBtn.addEventListener('pointerdown', ()=> addBtn.classList.add('pressed'));
-  addBtn.addEventListener('pointerup',   ()=> addBtn.classList.remove('pressed'));
-  addBtn.addEventListener('pointercancel',()=> addBtn.classList.remove('pressed'));
-  addBtn.addEventListener('pointerleave', ()=> addBtn.classList.remove('pressed'));
-  addBtn.addEventListener('click', addTask);
-
-  render();
-
-  // автофокус на первую пустую — без скролла
-  (function(){
-    const first=Array.from(document.querySelectorAll('.task-text')).find(n=>(n.textContent||'').trim()==='');
-    if(first){ first.focus(); /* не скроллим */ }
-  })();
-
-  // пересчитать зачёркивание при ресайзе
-  window.addEventListener('resize', ()=>{
-    document.querySelectorAll('li').forEach(li=>{
-      if(li.classList.contains('done')){
-        const wrap=li.querySelector('.textwrap'); if(wrap) buildStrike(wrap,false);
-      }
-    });
+    const line=document.createElementNS(svgNS,'line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y);
+    line.classList.add('strike-line'); line.style.setProperty('--len', `${len}`);
+    if(!animate){ line.style.strokeDashoffset=0; line.style.transition='none'; }
+    svg.appendChild(line);
+    if(animate){ requestAnimationFrame(()=>{ line.style.strokeDashoffset=0; }); }
   });
 
-/* ==== iOS Safari strike alignment fix ==== */
-(function(){
-  function isIOS(){
-    const ua = navigator.userAgent || '';
-    const platform = navigator.platform || '';
-    const macTouch = ua.includes('Mac') && 'ontouchend' in document;
-    return /iP(hone|od|ad)/.test(platform) || macTouch;
-  }
-
-  // If original buildStrike exists — override it with a version tuned for iOS
-  if (typeof window.buildStrike === 'function' || true){
-    window.buildStrike = function(textWrap, animate=true){
-      const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
-      const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
-
-      if (typeof window.syncEmptyClass === 'function') window.syncEmptyClass(textEl);
-
-      const range = document.createRange(); range.selectNodeContents(textEl);
-      const rects = Array.from(range.getClientRects());
-
-      const svgNS='http://www.w3.org/2000/svg';
-      const svg=document.createElementNS(svgNS,'svg'); svg.classList.add('strike-svg');
-
-      const parentRect=textWrap.getBoundingClientRect();
-      svg.setAttribute('width', parentRect.width);
-      svg.setAttribute('height', parentRect.height);
-      svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
-
-      // On iOS we rely on visual rect center; elsewhere try metrics if available
-      let metrics = null;
-      try{
-        if(!isIOS() && typeof window.getFontMetrics === 'function'){
-          metrics = window.getFontMetrics(textEl);
-        }
-      }catch(_){ metrics = null; }
-
-      rects.forEach(r=>{
-        const x1 = r.left - parentRect.left;
-        const x2 = r.right - parentRect.left;
-        const len = Math.max(0, x2 - x1);
-        if(len <= 0) return;
-
-        let yLocal;
-        if(metrics){
-          const baseline = (r.bottom - parentRect.top) - metrics.descent;
-          const cap = metrics.ascent;
-          yLocal = baseline - cap*0.50; // center optically
-        }else{
-          yLocal = (r.top - parentRect.top) + r.height*0.52; // robust for Safari
-        }
-
-        const line=document.createElementNS(svgNS,'line');
-        line.setAttribute('x1', x1); line.setAttribute('y1', yLocal);
-        line.setAttribute('x2', x2); line.setAttribute('y2', yLocal);
-        line.classList.add('strike-line');
-        line.style.setProperty('--len', `${len}`);
-        if(!animate){ line.style.strokeDashoffset=0; line.style.transition='none'; }
-        svg.appendChild(line);
-        if(animate){ requestAnimationFrame(()=>{ line.style.strokeDashoffset=0; }); }
-      });
-
-      textWrap.appendChild(svg);
-    };
-  }
-})();
-/* ===== Move bottom dock with the iOS keyboard ===== */
-const dock = document.querySelector('.bottomDock');
-
-function updateDockForKeyboard(){
-  const vv = window.visualViewport;
-  if (!vv || !dock) return;
-
-  const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
-  dock.style.transform = hidden ? `translateY(${-hidden}px)` : 'translateY(0)';
+  textWrap.appendChild(svg);
 }
 
-if (window.visualViewport){
+/* Фокус в конец, чтобы поднять клавиатуру и сразу печатать */
+function placeCaretAtEnd(el){
+  const r=document.createRange(); r.selectNodeContents(el); r.collapse(false);
+  const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+function focusEditable(el){
+  requestAnimationFrame(()=>{ el.focus({preventScroll:true}); placeCaretAtEnd(el); try{ el.click(); }catch{} });
+}
+
+/* ===== Рендер ===== */
+function render(){
+  list.innerHTML='';
+
+  tasks.forEach((t,i)=>{
+    const li=document.createElement('li'); if(t.done) li.classList.add('done');
+
+    const circle=document.createElement('div'); circle.className='circle';
+    if(t.done) circle.appendChild(makeTick());
+    circle.addEventListener('pointerdown',()=>circle.classList.add('touch'));
+    circle.addEventListener('pointerup',()=>circle.classList.remove('touch'));
+    circle.addEventListener('pointercancel',()=>circle.classList.remove('touch'));
+    circle.addEventListener('pointerleave',()=>circle.classList.remove('touch'));
+
+    const wrap=document.createElement('div'); wrap.className='textwrap';
+    const text=document.createElement('div');
+    text.className='task-text'; text.contentEditable='true'; text.spellcheck=false;
+    text.textContent=t.text||''; syncEmpty(text);
+
+    wrap.appendChild(text);
+    li.appendChild(circle); li.appendChild(wrap); list.appendChild(li);
+
+    circle.addEventListener('click',()=>{
+      if((text.textContent||'').trim()==='') return;
+      t.done=!t.done; save();
+      if(t.done){ li.classList.add('done'); circle.innerHTML=''; circle.appendChild(makeTick()); buildStrike(wrap,true); }
+      else{ li.classList.remove('done'); circle.innerHTML=''; const s=wrap.querySelector('.strike-svg'); if(s) s.remove(); }
+    });
+
+    text.addEventListener('input',()=>{
+      tasks[i].text=text.textContent; save(); syncEmpty(text);
+      if(t.done) buildStrike(wrap,false);
+    });
+
+    text.addEventListener('keydown',(e)=>{
+      const val=(text.textContent||'').trim();
+      if((e.key==='Backspace'||e.key==='Delete') && val===''){
+        e.preventDefault();
+        tasks.splice(i,1); if(tasks.length===0) tasks.push({text:'',done:false});
+        save(); render();
+      }
+    });
+
+    if(t.done) buildStrike(wrap,false);
+  });
+}
+
+/* ===== Добавление задачи: + рождает кружок, клавиатура сразу ===== */
+function addTask(){
+  tasks.push({text:'',done:false}); save(); render();
+  const last=list.querySelector('li:last-child');
+  if(last){
+    const c=last.querySelector('.circle'); const tx=last.querySelector('.task-text');
+    if(c){ c.classList.add('born'); setTimeout(()=>c.classList.remove('born'), 750); }
+    if(tx){ tx.classList.add('empty'); focusEditable(tx); }
+  }
+}
+const addBtnEl=document.getElementById('addBtn');
+addBtnEl.addEventListener('pointerdown',()=>addBtnEl.classList.add('pressed'));
+addBtnEl.addEventListener('pointerup',()=>addBtnEl.classList.remove('pressed'));
+addBtnEl.addEventListener('pointercancel',()=>addBtnEl.classList.remove('pressed'));
+addBtnEl.addEventListener('pointerleave',()=>addBtnEl.classList.remove('pressed'));
+addBtnEl.addEventListener('click', addTask);
+
+/* Клик вне поля — убрать фокус */
+document.addEventListener('pointerdown',(e)=>{
+  if(!e.target.closest('.task-text')){
+    const a=document.activeElement; if(a && a.blur) a.blur();
+  }
+},{passive:true});
+
+/* Первичный рендер */
+render();
+
+/* Пересчитать зачёркивание при ресайзе */
+window.addEventListener('resize', ()=>{
+  document.querySelectorAll('#tasks li.done .textwrap').forEach(w=>buildStrike(w,false));
+});
+
+/* ===== Поднять док вместе с клавиатурой (iOS visualViewport) ===== */
+const rootStyle = document.documentElement.style;
+function updateDockForKeyboard(){
+  const vv = window.visualViewport;
+  if(!vv) return;
+  const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
+  rootStyle.setProperty('--kb', hidden + 'px');
+}
+if(window.visualViewport){
   visualViewport.addEventListener('resize', updateDockForKeyboard);
   visualViewport.addEventListener('scroll',  updateDockForKeyboard);
   window.addEventListener('orientationchange', updateDockForKeyboard);
