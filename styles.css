@@ -1,141 +1,128 @@
 :root{
-    --accent:#ffd000;
-    --ink:#000;
-    --muted:#777;
-    --ring:#aaa;
-    --brand:#8a8a8a;
+  --accent:#ffd000;
+  --ink:#000;
+  --muted:#777;
+  --ring:#aaa;
+  --brand:#8a8a8a;
 
-    --pop-duration:520ms; /* плавное рождение кружка */
+  --header-h:64px;      /* высота шапки */
+  --dock-h:78px;        /* высота нижнего дока (без safe-area) */
+  --kb:0px;             /* сдвиг дока при клавиатуре, JS обновляет */
+
+  --pop-duration:520ms; /* рождение кружка */
 }
 
+/* База */
+html,body{ margin:0; padding:0; height:100%; }
 body{
-    font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-    background:#fff; color:var(--ink);
-    margin:0; padding:0;
-    -webkit-tap-highlight-color: transparent;
+  font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  background:#fff; color:var(--ink);
+  -webkit-tap-highlight-color:transparent;
 }
 
-/* Контейнер */
+/* Приложение натянуто на весь экран */
 .app{
-    display:flex;
-    flex-direction:column;
-    min-height:100vh;   /* на всю высоту экрана */
-    box-sizing:border-box;
-    background:#fff;
-    padding: 20px 16px calc(70px + env(safe-area-inset-bottom)) 16px;
+  position:fixed; inset:0; background:#fff;
 }
 
-/* Заголовок (день недели) */
+/* ===== Шапка — строго у верхней кромки ===== */
 .header{
-    font-size:32px;
-    font-weight:800;
-    margin:0 0 10px 0;
-    flex-shrink:0;
+  position:fixed; left:0; right:0; top:0; height:var(--header-h);
+  display:flex; align-items:flex-end;
+  padding:0 18px 10px 18px;
+  box-sizing:border-box;
+  font-size:32px; font-weight:800;
+  background:#fff;
 }
 
-/* Список задач */
+/* ===== Список — между шапкой и доком ===== */
 #tasks{
-    list-style:none;
-    margin:0;
-    padding:0;
-    flex:1;
-    overflow:auto;
-    scrollbar-width: none; /* Firefox */
+  position:fixed; left:0; right:0;
+  top:var(--header-h);
+  bottom:calc(var(--dock-h) + var(--kb) + env(safe-area-inset-bottom));
+  list-style:none; margin:0; padding:0 18px;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
 }
-#tasks::-webkit-scrollbar{ width:2px; }
-#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.2); }
-#tasks::-webkit-scrollbar-track{ background:transparent; }
+#tasks::-webkit-scrollbar{ width:1px; height:1px; }
+#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); }
+#tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
 
-/* Элемент списка */
 li{
-    display:flex;
-    align-items:flex-start;
-    padding:6px 4px;
-    font-size:18px;
-    line-height:1.25;
+  display:flex; align-items:flex-start;
+  padding:6px 4px;
+  font-size:18px; line-height:1.25;
 }
 
-/* Кружок */
+/* ===== Кружок ===== */
 .circle{
-    width:20px; height:20px;
-    border:2px solid var(--ring);
-    border-radius:50%;
-    margin-right:10px; margin-top:2px;
-    flex-shrink:0;
-    cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    transition: transform 90ms ease, box-shadow 90ms ease, background-color 140ms ease, border-color 140ms ease;
-    box-shadow:none; position:relative;
+  width:20px; height:20px; border:2px solid var(--ring);
+  border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition: transform 90ms ease, box-shadow 90ms ease,
+              background-color 140ms ease, border-color 140ms ease;
+  box-shadow:none; position:relative;
 }
 .circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); }
 .circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
 @keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
 
-/* Галочка */
+.done .circle{ background:var(--accent); border-color:var(--accent); }
 .tick{ width:14px; height:14px; display:block; }
 .tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
-.done .circle{ background:var(--accent); border-color:var(--accent); }
 
-/* Текст задачи */
+/* ===== Текст + placeholder ===== */
 .textwrap{ position:relative; flex:1; }
 .task-text{
-    min-height:1.25em;
-    white-space:pre-wrap; word-break:break-word;
-    outline:none; border:none; background:transparent;
-    font:inherit; color:var(--ink);
-    padding:2px 0 4px;
+  min-height:1.25em; white-space:pre-wrap; word-break:break-word;
+  outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
+  padding:2px 0 4px;
 }
-
-/* Плейсхолдер (светло-серый, плавный fade-in) */
 .task-text::before{
-    content: attr(data-placeholder);
-    position:absolute; left:0; top:0;
-    color:#b4b4b4; pointer-events:none;
-    opacity:0; transform: translateY(2px);
-    transition: opacity 220ms ease, transform 220ms ease;
+  content:"Новая задача…";
+  position:absolute; left:0; top:0;
+  color:#b4b4b4; pointer-events:none;
+  opacity:0; transform:translateY(2px);
+  transition:opacity 220ms ease, transform 220ms ease;
 }
-.task-text.empty::before{ opacity:1; transform: translateY(0); }
-
-/* Выполненные задачи */
+.task-text.empty::before{ opacity:1; transform:translateY(0); }
 .done .task-text{ color:var(--muted); }
 
-/* Зачёркивание по тексту */
+/* ===== Зачёркивание по тексту (SVG поверх) ===== */
 .strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
 .strike-line{
-    stroke: currentColor; stroke-width:1; stroke-linecap:round;
-    stroke-dasharray: var(--len, 0); stroke-dashoffset: var(--len, 0);
-    transition: stroke-dashoffset 220ms ease-out; opacity:.95;
+  stroke:currentColor; stroke-width:1; stroke-linecap:round;
+  stroke-dasharray:var(--len,0); stroke-dashoffset:var(--len,0);
+  transition:stroke-dashoffset 220ms ease-out; opacity:.95;
 }
 
-/* Нижний блок (бренд + плюсик) */
+/* ===== Нижний док — строго у нижней кромки, белый, без линии ===== */
 .bottomDock{
-    margin-top:auto;   /* прижат к низу */
-    padding:12px 8px 8px 8px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:#fff;
+  position:fixed; left:0; right:0; bottom:0;
+  height:calc(var(--dock-h) + var(--kb) + env(safe-area-inset-bottom));
+  padding:12px 18px 12px 18px;
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fff; border:none; box-shadow:none;
+  box-sizing:border-box;
 }
 .brand{
-    font-family:"Fredoka",system-ui,-apple-system,sans-serif;
-    font-weight:700; font-size:20px;
-    letter-spacing:.5px; color:var(--brand);
-    user-select:none;
+  font-family:"Fredoka",system-ui,-apple-system,sans-serif;
+  font-weight:700; font-size:20px; letter-spacing:.5px; color:var(--brand);
+  user-select:none;
 }
 
-/* Кнопка "+" */
+/* ===== Плюс — меньше, белый знак по центру ===== */
 .fab{
-    width:48px; height:48px;   /* меньше */
-    border-radius:50%;
-    background:var(--accent); color:#fff;
-    font-size:28px; line-height:0;
-    border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 6px 12px rgba(0,0,0,.16);
-    transition: transform 120ms ease, box-shadow 120ms ease;
+  width:48px; height:48px; border-radius:50%;
+  background:var(--accent); color:#fff;
+  font-size:28px; line-height:0; font-weight:600;
+  border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 12px rgba(0,0,0,.16);
+  transition:transform 120ms ease, box-shadow 120ms ease;
 }
 .fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.97); }
 
 @media (prefers-reduced-motion:reduce){
-    *{ animation:none !important; transition:none !important; }
+  *{ animation:none !important; transition:none !important; }
 }
