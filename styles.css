@@ -1,34 +1,29 @@
 /* ============================================================================
-  styles (3).css — Layout + Effects
-  - Fixed top header (#header) and fixed bottom dock (#dock)
-  - The ONLY scrollable area is #tasks
-  - Completed items: gray + strike SVG overlay (animated)
-  - Dock rises with keyboard (via --kb and inline transform from JS)
-============================================================================ */
+  style.css — Layout + Effects
+  — Верх/низ фиксированы (не «ездят»)
+  — Скролл только у #tasks
+  — Выполненные сереют + SVG-зачёркивание (мягкая анимация)
+  — Док поднимается с клавиатурой (через --kb и transform из JS)
+============================================================================= */
 
 :root{
-  /* Colors */
-  --accent:#ffd000;    /* brand yellow for the add button */
-  --ink:#000;          /* main text color */
-  --muted:#777;        /* secondary/placeholder text */
-  --ring:#aaa;         /* thin borders */
-  --brand:#8a8a8a;     /* gray for brand wordmark */
+  --accent:#ffd000;  /* жёлтая кнопка */
+  --ink:#000;        /* основной текст */
+  --muted:#777;      /* вторичный текст/плейсхолдер */
+  --ring:#aaa;       /* тонкие линии */
+  --brand:#8a8a8a;   /* серый логотип */
 
-  /* Geometry */
   --header-h:64px;
   --dock-h:78px;
 
-  /* Keyboard offset (set by script (2).js) */
-  --kb:0px;
+  --kb:0px;          /* сюда скрипт пишет высоту «вытеснения» */
 
-  /* Animations */
   --pop-duration:520ms;
 }
 
-/* Page is "hard-fixed": no page scroll; only #tasks scrolls */
-html, body {
+html, body{
   height:100%;
-  overflow:hidden;
+  overflow:hidden;                  /* скролла у страницы нет */
   overscroll-behavior:none;
   margin:0;
   background:#fff;
@@ -36,46 +31,96 @@ html, body {
   font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;
 }
 
-/* Top bar */
+/* ВЕРХНЯЯ ШАПКА */
 #header{
   position:fixed; left:0; right:0; top:0;
   height:var(--header-h);
   background:#fff;
-  display:flex; align-items:center;
-  gap:12px;
+  display:flex; align-items:center; gap:12px;
   padding:0 16px;
   border-bottom:1px solid rgba(0,0,0,.06);
   z-index:10;
 }
-#header .brand{
-  font-weight:800;
-  letter-spacing:.4px;
-  color:var(--brand);
-}
-#header .weekday{
-  margin-left:auto;   /* brand on left, weekday on right */
-  font-weight:600;
-}
+#header .brand{ font-weight:800; letter-spacing:.4px; color:var(--brand); }
+#header .weekday{ margin-left:auto; font-weight:600; }
 
-/* Bottom dock — fixed to bottom; lifted by --kb */
+/* НИЖНИЙ ДОК */
 #dock{
   position:fixed; left:0; right:0; bottom:0;
-  height:calc(var(--dock-h) + var(--kb));
+  height:calc(var(--dock-h) + var(--kb)); /* учёт клавиатуры */
   background:#fff;
-  display:flex; align-items:center; justify-content:center;
-  gap:12px;
+  display:flex; align-items:center; justify-content:center; gap:12px;
   padding:0 16px;
   border-top:1px solid rgba(0,0,0,.06);
   z-index:10;
-  transition:transform .25s ease;   /* JS applies translateY when keyboard shows */
+  transition:transform .25s ease;         /* скрипт меняет transform */
 }
-#dock .dock-brand{
-  color:var(--brand);
-  font-weight:700;
-  letter-spacing:.4px;
+#dock .dock-brand{ color:var(--brand); font-weight:700; letter-spacing:.4px; }
+
+/* ПРОКРУЧИВАЕМАЯ ЗОНА */
+#tasks{
+  position:absolute; left:0; right:0;
+  top:var(--header-h);
+  bottom:var(--dock-h);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:8px 12px;
+  list-style:none; margin:0;
 }
 
-/* Add button (yellow circle + white plus) */
+/* Тонкий скроллбар виден только во время прокрутки */
+#tasks{ scrollbar-width:none; }
+#tasks::-webkit-scrollbar{ width:3px; height:3px; }
+#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); border-radius:2px; }
+#tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
+
+/* СТРОКА ЗАДАЧИ */
+#tasks li{
+  position:relative;         /* нужен контекст для SVG зачёркивания */
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 6px;
+  font-size:18px; line-height:1.25;
+  border-bottom:1px solid rgba(0,0,0,.04);
+  transition:background .15s ease,color .2s ease;
+}
+#tasks li:hover{ background:rgba(0,0,0,.02); }
+
+/* ИКОНКА СЛЕВА: кольцо + галочка */
+#tasks li .tick{ width:22px; height:22px; flex:0 0 22px; display:block; }
+.tick-ring{ fill:none; stroke:#c9c9c9; stroke-width:2; }
+.tick-mark{
+  fill:none; stroke:#2f9d27; stroke-width:2.5;
+  stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:18; stroke-dashoffset:18;      /* спрятана */
+  transition:stroke-dashoffset .22s ease;         /* мягкая прорисовка */
+}
+#tasks li.done .tick-mark{ stroke-dashoffset:0; }  /* «появление» галочки */
+
+/* ТЕКСТ ЗАДАЧИ */
+#tasks li .text{
+  flex:1 1 auto;
+  outline:none;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+#tasks li .text.empty{ color:var(--muted); opacity:.7; }
+
+/* СОСТОЯНИЕ «ГОТОВО» */
+#tasks li.done{ color:#9aa0a6; }
+
+/* SVG-ЗАЧЁРКИВАНИЕ СВЕРХУ ТЕКСТА */
+#tasks li svg.strike{
+  position:absolute; left:0; top:0; width:100%; height:100%;
+  pointer-events:none;
+}
+#tasks li .strike-line{
+  stroke:#8a8a8a; stroke-width:2; stroke-linecap:round;
+  opacity:0; stroke-dasharray:4 4;
+  animation:strikeIn .18s ease forwards;          /* мягкая материализация */
+}
+@keyframes strikeIn{ from{opacity:0;} to{opacity:1;} }
+
+/* КНОПКА «ПЛЮС» */
 #addBtn.fab{
   appearance:none; border:none; cursor:pointer;
   width:56px; height:56px; border-radius:50%;
@@ -85,78 +130,5 @@ html, body {
   transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
 #addBtn.fab:active{ transform:scale(.98); filter:brightness(.98); box-shadow:0 4px 12px rgba(0,0,0,.12); }
-#addBtn .plus{
-  width:26px; height:26px;
-}
-#addBtn .plus path{
-  stroke:#fff; stroke-width:3.2; stroke-linecap:round;
-  fill:none;
-}
-
-/* Scroll area fills the space between header and dock */
-#tasks{
-  position:absolute; left:0; right:0;
-  top:var(--header-h);
-  bottom:var(--dock-h); /* base dock height; actual keyboard lift is via transform */
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  padding:8px 12px;
-  list-style:none; margin:0;        /* for UL */
-}
-
-/* Thin scrollbar visible only while scrolling (JS toggles .scrolling) */
-#tasks{ scrollbar-width:none; }
-#tasks::-webkit-scrollbar{ width:3px; height:3px; }
-#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); border-radius:2px; }
-#tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
-
-/* One task row */
-#tasks li{
-  position:relative;       /* needed for strike SVG overlay */
-  display:flex; align-items:flex-start;
-  gap:10px;
-  padding:10px 6px;
-  font-size:18px; line-height:1.25;
-  border-bottom:1px solid rgba(0,0,0,.04);
-  transition:background .15s ease,color .2s ease;
-}
-#tasks li:hover{ background:rgba(0,0,0,.02); }
-
-/* Left icon (ring + tick) */
-#tasks li .tick{
-  width:22px; height:22px; flex:0 0 22px; display:block;
-}
-.tick-ring{
-  fill:none; stroke:#c9c9c9; stroke-width:2;
-}
-.tick-mark{
-  fill:none; stroke:#2f9d27; stroke-width:2.5;
-  stroke-linecap:round; stroke-linejoin:round;
-  stroke-dasharray:18; stroke-dashoffset:18;
-  transition:stroke-dashoffset .22s ease;
-}
-#tasks li.done .tick-mark{ stroke-dashoffset:0; }
-
-/* Task text */
-#tasks li .text{
-  flex:1 1 auto;
-  outline:none;
-  white-space:pre-wrap;
-  word-break:break-word;
-}
-#tasks li .text.empty{ color:var(--muted); opacity:.7; }
-
-/* Done state */
-#tasks li.done{ color:#9aa0a6; }
-
-/* Strike SVG overlay */
-#tasks li svg.strike{
-  position:absolute; left:0; top:0; width:100%; height:100%;
-  pointer-events:none;
-}
-#tasks li .strike-line{
-  stroke:#8a8a8a; stroke-width:2; stroke-linecap:round;
-  opacity:0; stroke-dasharray:4 4;
-  animation:strikeIn .18s ease forwards;
-}
-@keyframes strikeIn{ from{opacity:0;} to{opacity:1;} }
+#addBtn .plus{ width:26px; height:26px; }
+#addBtn .plus path{ stroke:#fff; stroke-width:3.2; stroke-linecap:round; fill:none; }
