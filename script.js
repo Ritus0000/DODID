@@ -220,3 +220,19 @@ if(window.visualViewport){
     if (scroller.scrollHeight <= scroller.clientHeight) e.preventDefault();
   }, { passive: false });
 })();
+function toggleTask(li) {
+  li.classList.toggle("done");
+  reorderTasks();
+}
+
+function reorderTasks() {
+  const tasks = document.querySelector("#tasks");
+  const items = Array.from(tasks.children);
+
+  // разделяем выполненные и невыполненные
+  const active = items.filter(li => !li.classList.contains("done"));
+  const completed = items.filter(li => li.classList.contains("done"));
+
+  // плавно перерисовываем порядок
+  [...active, ...completed].forEach(li => tasks.appendChild(li));
+}
