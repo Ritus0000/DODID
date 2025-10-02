@@ -2,30 +2,58 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
+  <!-- Viewport rules:
+       - viewport-fit=cover: enables iOS safe-area use
+       - user-scalable=no: blocks pinch-zoom per your earlier requirement -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-  <title>Dodid</title>
+  <title>DODID</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
+  <!-- PWA/standalone iOS hints (optional, harmless for normal Safari) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="white">
+  <meta name="apple-mobile-web-app-title" content="Dodid">
 
-  <link rel="stylesheet" href="styles.css">
+  <!-- Stylesheet (note the encoded space %20 for the file name with a space) -->
+  <link rel="stylesheet" href="styles%20(3).css">
 </head>
 <body>
-  <div class="app">
-    <!-- Шапка (строго вверху) -->
-    <header class="header" id="dayHeader"></header>
+  <!--
+    LAYOUT
+    - #header (fixed top): shows weekday; white, minimal
+    - #tasks  (only scrollable area): fills between header and dock
+    - #dock   (fixed bottom): brand + big yellow add button; rises with keyboard
+  -->
 
-    <!-- Список задач (зона прокрутки между шапкой и доком) -->
-    <ul id="tasks"></ul>
+  <header id="header" aria-label="Top bar">
+    <div class="brand" aria-hidden="true">DODID</div>
+    <div id="dayHeader" class="weekday" aria-live="polite">
+      <!-- filled by JS with the current weekday -->
+    </div>
+  </header>
 
-    <!-- Нижний док (строго внизу) -->
-    <footer class="bottomDock">
-      <div class="brand">DODID</div>
-      <button class="fab" id="addBtn" aria-label="+">+</button>
-    </footer>
-  </div>
+  <!-- We use <ul> for semantics, but JS works with any container -->
+  <ul id="tasks" role="list" aria-label="Task list">
+    <!-- JS renders <li> rows here -->
+  </ul>
 
-  <script src="script.js"></script>
+  <footer id="dock" aria-label="Bottom dock">
+    <!-- Brand on the left (optional) -->
+    <div class="dock-brand" aria-hidden="true">DODID</div>
+
+    <!-- Add button:
+         - yellow circular button
+         - white "+" inside (SVG), no text node, accessible label -->
+    <button id="addBtn" class="fab" aria-label="Добавить задачу" title="Добавить задачу">
+      <svg viewBox="0 0 24 24" class="plus">
+        <!-- A white plus; stroke controlled in CSS -->
+        <path d="M12 5 L12 19 M5 12 L19 12"></path>
+      </svg>
+    </button>
+  </footer>
+
+  <!-- Core logic (data, render, rollover, strike) -->
+  <script defer src="script%20(1).js"></script>
+  <!-- iOS bridge (keyboard raise + anti rubber-band) -->
+  <script defer src="script%20(2).js"></script>
 </body>
 </html>
