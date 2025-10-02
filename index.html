@@ -1,47 +1,31 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>Dodid</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Dodid</title>
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="white">
-<meta name="apple-mobile-web-app-title" content="Dodid">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="wrapper">
-    <div class="phone">
-      <div class="statusbar">
-        <div id="time">9:41</div>
-        <div style="width:40px; text-align:right;">📶 🔋</div>
-        <div class="island"></div>
-      </div>
+  <div class="app">
+    <!-- Шапка (строго вверху) -->
+    <header class="header" id="dayHeader"></header>
 
-      <div class="app">
-        <div class="header" id="dayHeader">Среда</div>
+    <!-- Список задач (зона прокрутки между шапкой и доком) -->
+    <ul id="tasks"></ul>
 
-        <ul id="tasks"></ul>
-
-        <div class="bottomDock">
-          <div class="brand">DODID</div>
-          <button class="fab" id="addBtn" aria-label="Add">
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-</button>
-
-        </div>
-      </div>
-    </div>
+    <!-- Нижний док (строго внизу) -->
+    <footer class="bottomDock">
+      <div class="brand">DODID</div>
+      <button class="fab" id="addBtn" aria-label="+">+</button>
+    </footer>
   </div>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
