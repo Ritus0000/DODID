@@ -1,56 +1,49 @@
 /* ============================================================================
   script (2).js — iOS bridge
-  Назначение: строгая фиксация экрана (убираем "rubber-band" эффект),
-  и корректное поднятие нижнего дока при появлении экранной клавиатуры
-  через VisualViewport API (iOS Safari).
-  Внешние элементы:
-    - #tasks — единственная область, где разрешён скролл
-    - #dock  — нижняя панель, которую нужно поднимать при клавиатуре
+  Goals:
+    A) Prevent page "rubber-band" scroll; allow scroll ONLY inside #tasks
+    B) Raise #dock when iOS software keyboard appears (VisualViewport)
 ============================================================================ */
 
-/* ---------- Блокировка резиновой прокрутки вне #tasks ----------
-   Идея: на документ навешиваем touchmove с preventDefault,
-   НО если событие произошло внутри #tasks — разрешаем (для списка).
-   Важно: { passive:false }, иначе preventDefault не сработает.
----------------------------------------------------------------------------- */
+/* A) Lock rubber-band outside #tasks
+   - We attach a document-level touchmove listener with preventDefault(),
+     but allow touches inside the scrolling area (#tasks).
+   - { passive:false } is mandatory so preventDefault actually works on iOS.
+*/
 (function lockIOSRubberBand(){
   const scrollArea = document.getElementById("tasks");
   if (!scrollArea) return;
 
   document.addEventListener("touchmove", (e) => {
-    // Разрешаем только внутри списка
     if (!scrollArea.contains(e.target)) {
       e.preventDefault();
     }
   }, { passive: false });
 
-  // На саму область скролла вешаем события с passive:false
-  // Это «фиксирует» политику слушателей и предотвращает ругань iOS.
+  // Attach non-passive listeners on the scroll area to make iOS happy
   ["touchstart","touchmove","touchend","touchcancel"].forEach(ev => {
     scrollArea.addEventListener(ev, () => {}, { passive: false });
   });
 })();
 
-/* ---------- Поднятие дока при клавиатуре (VisualViewport) ----------
-   Формула из практики iOS:
+/* B) Raise dock with the iOS keyboard (VisualViewport)
+   Formula used:
      hidden = window.innerHeight - vv.height - vv.offsetTop
-   Это «вытесненная» высота, равная размеру клавиатуры + системных панелей.
-   Мы записываем её в CSS-переменную --kb и одновременно сдвигаем #dock.
----------------------------------------------------------------------------- */
+   That is the "pushed-out" vertical space equal to keyboard height plus UI bars.
+   We set CSS var --kb (for layout) and also translate #dock immediately.
+*/
 (function bridgeKeyboard(){
   const vv = window.visualViewport;
   const dock = document.getElementById("dock");
   if (!vv || !dock) return;
 
   function apply(){
-    const hidden = window.innerHeight - vv.height - vv.offsetTop;
-    // Пишем значение с единицами в корень документа: можно использовать в CSS
-    document.documentElement.style.setProperty("--kb", `${Math.max(0, hidden)}px`);
-    // И сразу двигаем док (чтобы не ждать реакцию верстки)
+    const hidden = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty("--kb", hidden + "px");
     dock.style.transform = hidden > 0 ? `translateY(-${hidden}px)` : "";
   }
 
   vv.addEventListener("resize", apply);
-  vv.addEventListener("scroll", apply); // при появлении клавиатуры offsetTop тоже меняется
-  apply(); // первичная инициализация
+  vv.addEventListener("scroll", apply);
+  apply();
 })();
