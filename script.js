@@ -1,89 +1,246 @@
 /* Время */
-function updateTime(){
-  const el=document.getElementById('time');
-  if(!el) return;
-  const d=new Date();
-  const hh=String(d.getHours()).padStart(2,'0');
-  const mm=String(d.getMinutes()).padStart(2,'0');
-  el.textContent = `${hh}:${mm}`;
-}
-setInterval(updateTime, 10000);
-updateTime();
-
-/* День недели */
-const dowNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
-(function(){
-  const el=document.getElementById('dow');
-  if(el){
-    el.textContent = dowNames[new Date().getDay()] || 'Сегодня';
+  function updateTime(){
+    const now = new Date();
+    let h = now.getHours(), m = now.getMinutes();
+    if(m < 10) m = "0"+m;
+    document.getElementById("time").textContent = h + ":" + m;
   }
-})();
+  setInterval(updateTime, 1000); updateTime();
 
-/* ДАННЫЕ */
-const tasksEl = document.getElementById('tasks');
+  /* Хранилище */
+  const KEY='dodid_tasks_v1', START_TASKS=3;
+  let tasks=[];
+  const raw=localStorage.getItem(KEY);
+  if(raw===null){ tasks=Array.from({length:START_TASKS},()=>({text:'',done:false})); localStorage.setItem(KEY, JSON.stringify(tasks)); }
+  else{ try{ tasks=JSON.parse(raw)||[] }catch{ tasks=[] } }
+  function save(){ localStorage.setItem(KEY, JSON.stringify(tasks)); }
 
-function taskLi(text=''){
-  const li=document.createElement('li');
+  const list=document.getElementById('tasks');
+  const addBtn=document.getElementById('addBtn');
+  let scrollHideTimer=null;
 
-  const circle=document.createElement('button');
-  circle.className='circle'; circle.type='button';
-  circle.innerHTML = `
-    <svg class="tick" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 12.5l4.2 4.2L18 9" />
-    </svg>
-  `;
-  li.appendChild(circle);
+  /* Показ нативной тонкой полосы только во время СВОЕГО скролла пользователя */
+  function tempShowScrollbar(){
+    list.classList.add('scrolling');
+    clearTimeout(scrollHideTimer);
+    scrollHideTimer=setTimeout(()=> list.classList.remove('scrolling'), 800);
+  }
+  list.addEventListener('scroll', tempShowScrollbar, {passive:true});
 
-  const wrap=document.createElement('div');
-  wrap.className='textwrap';
-  const input=document.createElement('div');
-  input.className='task-text'; input.contentEditable='true'; input.spellcheck=false;
-  input.textContent=text;
-  const ph=document.createElement('div');
-  ph.className='placeholder'; ph.textContent='Новая задача…';
-  wrap.appendChild(input); wrap.appendChild(ph);
-  li.appendChild(wrap);
+  /* Галочка (статично) */
+  function makeTickSVGStatic(){
+    const svgNS='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(svgNS,'svg');
+    svg.setAttribute('viewBox','0 0 14 14'); svg.classList.add('tick');
+    const p1=document.createElementNS(svgNS,'path'); p1.setAttribute('d','M3 7 L6 10');
+    const p2=document.createElementNS(svgNS,'path'); p2.setAttribute('d','M6 10 L11 3');
+    svg.appendChild(p1); svg.appendChild(p2); return svg;
+  }
 
-  if(text) input.classList.add('hasText');
+  /* Метрики шрифта для точного Y зачёркивания (по кириллице) */
+  let fontMetricsCache = null;
+  function computeFontMetricsFor(el){
+    const cs = getComputedStyle(el);
+    let font = cs.font;
+    if(!font || font === 'normal'){
+      const style = cs.fontStyle || 'normal';
+      const weight = cs.fontWeight || '400';
+      const size = cs.fontSize || '18px';
+      const line = cs.lineHeight && cs.lineHeight !== 'normal' ? cs.lineHeight : size;
+      const family = cs.fontFamily || 'Helvetica Neue, Arial, sans-serif';
+      font = `${style} ${weight} ${size}/${line} ${family}`;
+    }
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = font;
+    const sample = 'кенгшзхываполжэячсмитью';
+    const m = ctx.measureText(sample);
+    const ascent  = m.actualBoundingBoxAscent || 0;
+    const descent = m.actualBoundingBoxDescent || 0;
+    if(ascent === 0 && descent === 0) return null;
+    return { ascent, descent };
+  }
+  function getFontMetrics(el){
+    if(fontMetricsCache) return fontMetricsCache;
+    fontMetricsCache = computeFontMetricsFor(el);
+    return fontMetricsCache;
+  }
 
-  circle.addEventListener('touchstart',()=>circle.classList.add('touch'),{passive:true});
-  circle.addEventListener('touchend',()=>circle.classList.remove('touch'),{passive:true});
-  circle.addEventListener('click', ()=>{
-    li.classList.toggle('done');
-    buildStrike(wrap,true);
+  function syncEmptyClass(el){
+    if((el.textContent||'').trim()==='') el.classList.add('empty'); else el.classList.remove('empty');
+  }
+
+  /* Перечёркивание: строим линии по каждой визуальной строке */
+  function buildStrike(textWrap, animate=true){
+    const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
+    const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
+
+    syncEmptyClass(textEl);
+
+    const range = document.createRange(); range.selectNodeContents(textEl);
+    const rects = Array.from(range.getClientRects());
+
+    const svgNS='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(svgNS,'svg'); svg.classList.add('strike-svg');
+
+    const parentRect=textWrap.getBoundingClientRect();
+    svg.setAttribute('width', parentRect.width);
+    svg.setAttribute('height', parentRect.height);
+    svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
+
+    const metrics = getFontMetrics(textEl);
+    const fallbackRatio = 0.56; // если метрик нет
+
+    rects.forEach(r=>{
+      const x1 = r.left - parentRect.left;
+      const x2 = r.right - parentRect.left;
+      const len = Math.max(0, x2 - x1);
+      if(len <= 0) return;
+
+      let yLocal;
+      if(metrics){
+        const baseline = (r.bottom - parentRect.top) - metrics.descent;
+        const xHeight  = metrics.ascent; // приближение
+        yLocal = baseline - (xHeight / 2);
+      }else{
+        yLocal = (r.top - parentRect.top) + r.height * fallbackRatio;
+      }
+
+      const line=document.createElementNS(svgNS,'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', yLocal);
+      line.setAttribute('x2', x2); line.setAttribute('y2', yLocal);
+      line.classList.add('strike-line');
+      line.style.setProperty('--len', `${len}`);
+
+      if(!animate){ line.style.strokeDashoffset=0; line.style.transition='none'; }
+      svg.appendChild(line);
+
+      if(animate){ requestAnimationFrame(()=>{ line.style.strokeDashoffset=0; }); }
+    });
+
+    textWrap.appendChild(svg);
+  }
+
+  /* Рендер */
+  function render(){
+    list.innerHTML='';
+
+    for(let i=0;i<tasks.length;i++){
+      const t=tasks[i];
+      const li=document.createElement('li'); if(t.done) li.classList.add('done');
+
+      const circle=document.createElement('div'); circle.className='circle';
+      if(t.done){ circle.appendChild(makeTickSVGStatic()); }
+
+      circle.addEventListener('pointerdown', ()=> circle.classList.add('touch'));
+      circle.addEventListener('pointerup',   ()=> circle.classList.remove('touch'));
+      circle.addEventListener('pointercancel',()=> circle.classList.remove('touch'));
+      circle.addEventListener('pointerleave', ()=> circle.classList.remove('touch'));
+
+      const textWrap=document.createElement('div'); textWrap.className='textwrap';
+      const text=document.createElement('div');
+      text.className='task-text'; text.contentEditable='true'; text.spellcheck=false;
+      text.dataset.placeholder='Новая задача…'; text.textContent=t.text||'';
+      syncEmptyClass(text);
+
+      textWrap.appendChild(text);
+      li.appendChild(circle);
+      li.appendChild(textWrap);
+      list.appendChild(li);
+
+      circle.addEventListener('click', ()=>{
+        if((text.textContent||'').trim()==='') return;
+        t.done=!t.done; save();
+        if(t.done){
+          li.classList.add('done');
+          const old=circle.querySelector('svg.tick'); if(old) old.remove();
+          circle.appendChild(makeTickSVGStatic());
+          buildStrike(textWrap, true);
+        }else{
+          li.classList.remove('done');
+          const old=circle.querySelector('svg.tick'); if(old) old.remove();
+          const s=textWrap.querySelector('.strike-svg'); if(s) s.remove();
+        }
+      });
+
+      text.addEventListener('input', ()=>{
+        tasks[i].text=text.textContent; save(); syncEmptyClass(text);
+        if(t.done) buildStrike(textWrap, false);
+      });
+
+      // Удаление пустой строки Backspace/Delete — разрешено для любой строки
+      text.addEventListener('keydown',(e)=>{
+        const val=(text.textContent||'').trim();
+        if((e.key==='Backspace'||e.key==='Delete') && val===''){
+          e.preventDefault();
+          const goPrev=(e.key==='Backspace');
+          const nextIndex=goPrev?Math.max(0, i-1):Math.min(tasks.length-1, i+1);
+          tasks.splice(i,1); save(); render();
+          const targetLi=list.children[Math.min(nextIndex, list.children.length-2)];
+          if(targetLi){
+            const ti=targetLi.querySelector('.task-text');
+            if(ti){ ti.focus(); /* без скролла */ }
+          }
+        }
+      });
+
+      if(t.done) buildStrike(textWrap, false);
+    }
+
+    const spacer=document.createElement('li'); spacer.className='scroll-spacer'; spacer.setAttribute('aria-hidden','true'); list.appendChild(spacer);
+  }
+
+  /* ДОБАВЛЕНИЕ НОВОЙ ЗАДАЧИ — вообще без программного скролла */
+  function addTask(){
+    tasks.push({text:'',done:false}); save(); render();
+
+    const lastLi=list.querySelector('li:nth-last-child(2)'); // последняя реальная
+    if(lastLi){
+      const c = lastLi.querySelector('.circle');
+      const tx = lastLi.querySelector('.task-text');
+
+      if(c){ c.classList.add('born'); setTimeout(()=>c.classList.remove('born'), 800); }
+      if(tx){
+        tx.focus();
+        // мягкое появление плейсхолдера у только что добавленной пустой строки
+        tx.classList.add('empty');
+        tx.classList.add('ph-anim-start');
+        requestAnimationFrame(()=>{
+          tx.classList.add('ph-appear');
+          setTimeout(()=> tx.classList.remove('ph-anim-start','ph-appear'), 260);
+        });
+      }
+      /* НИКАКОГО scrollTo/scrollIntoView */
+    }
+  }
+
+  // классы для ручного запуска анимации плейсхолдера (добавляются в addTask)
+  // (CSS берёт переходы из .task-text::before и .task-text.empty::before)
+
+  addBtn.addEventListener('pointerdown', ()=> addBtn.classList.add('pressed'));
+  addBtn.addEventListener('pointerup',   ()=> addBtn.classList.remove('pressed'));
+  addBtn.addEventListener('pointercancel',()=> addBtn.classList.remove('pressed'));
+  addBtn.addEventListener('pointerleave', ()=> addBtn.classList.remove('pressed'));
+  addBtn.addEventListener('click', addTask);
+
+  render();
+
+  // автофокус на первую пустую — без скролла
+  (function(){
+    const first=Array.from(document.querySelectorAll('.task-text')).find(n=>(n.textContent||'').trim()==='');
+    if(first){ first.focus(); /* не скроллим */ }
+  })();
+
+  // пересчитать зачёркивание при ресайзе
+  window.addEventListener('resize', ()=>{
+    document.querySelectorAll('li').forEach(li=>{
+      if(li.classList.contains('done')){
+        const wrap=li.querySelector('.textwrap'); if(wrap) buildStrike(wrap,false);
+      }
+    });
   });
 
-  input.addEventListener('input', ()=>{
-    syncEmptyClass(input);
-    buildStrike(wrap,false);
-  });
-
-  input.addEventListener('focus', ()=>{ /* для iOS */ });
-
-  return li;
-}
-
-function syncEmptyClass(el){
-  if(el.textContent && el.textContent.trim().length>0) el.classList.add('hasText');
-  else el.classList.remove('hasText');
-}
-
-/* Первичные элементы */
-tasksEl.appendChild(taskLi('Новая задача…'));
-tasksEl.appendChild(taskLi('Новая задача…'));
-tasksEl.appendChild(taskLi('Новая задача…'));
-tasksEl.appendChild(taskLi('Eg'));
-tasksEl.appendChild(taskLi('Новая задача…'));
-
-/* Кнопка добавить */
-document.getElementById('addBtn')?.addEventListener('click', ()=>{
-  const li=taskLi('');
-  tasksEl.appendChild(li);
-  const input=li.querySelector('.task-text');
-  input?.focus();
-});
-
-/* ==== iOS Safari strike alignment fix (first pass) ==== */
+/* ==== iOS Safari strike alignment fix ==== */
 (function(){
   function isIOS(){
     const ua = navigator.userAgent || '';
@@ -92,6 +249,7 @@ document.getElementById('addBtn')?.addEventListener('click', ()=>{
     return /iP(hone|od|ad)/.test(platform) || macTouch;
   }
 
+  // If original buildStrike exists — override it with a version tuned for iOS
   if (typeof window.buildStrike === 'function' || true){
     window.buildStrike = function(textWrap, animate=true){
       const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
@@ -110,6 +268,7 @@ document.getElementById('addBtn')?.addEventListener('click', ()=>{
       svg.setAttribute('height', parentRect.height);
       svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
 
+      // On iOS we rely on visual rect center; elsewhere try metrics if available
       let metrics = null;
       try{
         if(!isIOS() && typeof window.getFontMetrics === 'function'){
@@ -145,104 +304,4 @@ document.getElementById('addBtn')?.addEventListener('click', ()=>{
       textWrap.appendChild(svg);
     };
   }
-})();
-
-/* ==== VisualViewport-driven sizing & keyboard offset ==== */
-(function(){
-  const vv = window.visualViewport;
-  if(!vv){
-    document.documentElement.style.setProperty('--appH', window.innerHeight + 'px');
-    return;
-  }
-
-  let base = Math.max(window.innerHeight, vv.height); // baseline without keyboard
-
-  function setVars(){
-    const appH = Math.round(vv.height);
-    document.documentElement.style.setProperty('--appH', appH + 'px');
-    const kb = Math.max(0, base - vv.height);  // keyboard overlay height approximation
-    document.documentElement.style.setProperty('--kb-offset', kb + 'px');
-  }
-
-  vv.addEventListener('resize', setVars);
-  vv.addEventListener('scroll', setVars);
-  window.addEventListener('orientationchange', () => {
-    setTimeout(()=>{
-      base = Math.max(window.innerHeight, (window.visualViewport && window.visualViewport.height) || window.innerHeight);
-      setVars();
-    }, 300);
-  });
-
-  setVars();
-})();
-
-/* ==== Precise (Cyrillic-aware) strikethrough centering ==== */
-(function(){
-  function px(n){ return parseFloat(n)||0; }
-  function parsedLineHeight(cs, fontSize){
-    const lh = cs.lineHeight;
-    if(lh === 'normal' || !lh) return 1.2 * fontSize; // typical UA default
-    if(lh.endsWith('px')) return px(lh);
-    const mul = parseFloat(lh);
-    if(!isNaN(mul)) return mul * fontSize;
-    return 1.2 * fontSize;
-  }
-
-  function getAscentDescent(el){
-    const cs = getComputedStyle(el);
-    const fontSize = px(cs.fontSize);
-    const font = `${cs.fontStyle} ${cs.fontVariant} ${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`.trim();
-    const c = document.createElement('canvas');
-    const ctx = c.getContext('2d');
-    ctx.font = font;
-    ctx.textBaseline = 'alphabetic';
-    const sample = el.textContent && el.textContent.trim() ? el.textContent : 'АаБбВвГгDdJjQqЁЙЙ';
-    const m = ctx.measureText(sample);
-    const ascent  = m.actualBoundingBoxAscent || fontSize * 0.8;
-    const descent = m.actualBoundingBoxDescent || fontSize * 0.2;
-    return {ascent, descent, fontSize, lineHeight: parsedLineHeight(cs, fontSize)};
-  }
-
-  window.buildStrike = function(textWrap, animate=true){
-    const old = textWrap.querySelector('.strike-svg'); if(old) old.remove();
-    const textEl = textWrap.querySelector('.task-text'); if(!textEl) return;
-
-    if (typeof window.syncEmptyClass === 'function') window.syncEmptyClass(textEl);
-
-    const range = document.createRange(); range.selectNodeContents(textEl);
-    const rects = Array.from(range.getClientRects());
-
-    const {ascent, descent, fontSize, lineHeight} = getAscentDescent(textEl);
-
-    const svgNS='http://www.w3.org/2000/svg';
-    const svg=document.createElementNS(svgNS,'svg'); svg.classList.add('strike-svg');
-
-    const parentRect=textWrap.getBoundingClientRect();
-    svg.setAttribute('width', parentRect.width);
-    svg.setAttribute('height', parentRect.height);
-    svg.setAttribute('viewBox', `0 0 ${parentRect.width} ${parentRect.height}`);
-
-    // Offset from top of line box to the center of the glyph box
-    const topToCenter = (lineHeight - fontSize)/2 + (ascent + descent)/2;
-
-    rects.forEach(r=>{
-      const x1 = r.left - parentRect.left;
-      const x2 = r.right - parentRect.left;
-      const len = Math.max(0, x2 - x1);
-      if(len <= 0) return;
-
-      const yLocal = (r.top - parentRect.top) + topToCenter;
-
-      const line=document.createElementNS(svgNS,'line');
-      line.setAttribute('x1', x1); line.setAttribute('y1', yLocal);
-      line.setAttribute('x2', x2); line.setAttribute('y2', yLocal);
-      line.classList.add('strike-line');
-      line.style.setProperty('--len', `${len}`);
-      if(!animate){ line.style.strokeDashoffset=0; line.style.transition='none'; }
-      svg.appendChild(line);
-      if(animate){ requestAnimationFrame(()=>{ line.style.strokeDashoffset=0; }); }
-    });
-
-    textWrap.appendChild(svg);
-  };
 })();

@@ -1,136 +1,109 @@
 :root{
-  --accent:#ffd000;
-  --ink:#000;
-  --muted:#777;
-  --ring:#aaa;
-  --brand:#8a8a8a;
-  --phone-w:390px; --phone-h:844px;
+    --accent:#ffd000;
+    --ink:#000;
+    --muted:#777;
+    --ring:#aaa;
+    --brand:#8a8a8a;
+    --phone-w:390px; --phone-h:844px;
 
-  --pop-duration:520ms; /* медленнее рождение кружка */
-}
+    --pop-duration:520ms; /* медленнее рождение кружка */
+  }
 
-/* Базовая типографика и холст */
-*{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; }
-body{
-  font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Noto Sans","Apple Color Emoji","Segoe UI Emoji",sans-serif;
-  color:var(--ink);
-  background:#fff;
-}
+  body{ font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:#fff; color:var(--ink); margin:0; }
+  .wrapper{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:#e9edf1; padding:16px; box-sizing:border-box; }
+  .phone{ width:var(--phone-w); height:var(--phone-h); background:#fff; border-radius:34px; box-shadow:0 18px 50px rgba(0,0,0,.18); position:relative; overflow:hidden; }
+  @media (max-width:480px),(hover:none) and (pointer:coarse){ .wrapper{padding:0; background:#fff;} .phone{width:100%; height:100dvh; border-radius:0; box-shadow:none;} }
 
-.wrapper{ display:flex; align-items:stretch; justify-content:center; min-height:100vh; }
-.phone{ width:100%; max-width:var(--phone-w); margin:0 auto; }
-.app{ position:relative; padding:24px 20px 120px; }
+  .statusbar{ height:47px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-size:14px; font-weight:600; background:#fff; }
+  .island{ position:absolute; top:9px; left:50%; transform:translateX(-50%); width:120px; height:32px; background:#000; border-radius:20px; }
 
-/* Шапка под динамический остров */
-.header{ display:flex; align-items:center; gap:12px; height:44px; }
-.time{ font-weight:600; letter-spacing:.3px; }
-.pill{ margin-left:auto; display:flex; align-items:center; gap:8px; background:#000; color:#fff; border-radius:28px; padding:4px 10px; }
-.pill .avatar{ width:22px; height:22px; border-radius:50%; display:block; }
-.pill .dot{ width:8px; height:8px; border-radius:50%; background:#17e37e; }
+  .app{ position:absolute; inset:0; padding:70px 16px calc(24px + env(safe-area-inset-bottom)) 16px; box-sizing:border-box; display:flex; flex-direction:column; background:#fff; -webkit-tap-highlight-color:transparent; }
 
-/* Заголовок дня */
-.dow{ font-family:"Fredoka", system-ui, sans-serif; font-weight:700; font-size:38px; margin:20px 0 16px; }
+  .header{ font-size:32px; font-weight:800; margin-bottom:10px; }
 
-/* Список */
-#tasks{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:18px; }
+  /* Список: нативная полоса ПРАВО, очень тонкая, без стрелок; видна только при скролле */
+  #tasks{
+    list-style:none; margin:0; padding:0; flex:1; overflow:auto;
+    scrollbar-width: none; /* Firefox: скрыта по умолчанию */
+  }
+  #tasks.scrolling{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.22) transparent; }
+  #tasks::-webkit-scrollbar{ width:1px; height:1px; }                 /* супер-тонкая */
+  #tasks::-webkit-scrollbar-button{ display:none; width:0; height:0; } /* без стрелок */
+  #tasks::-webkit-scrollbar-track{ background:transparent; }
+  #tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); border-radius:0; }
+  #tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
 
-/* Элемент задачи */
-li{ display:flex; align-items:flex-start; gap:14px; }
-.circle{
-  width:24px; height:24px; border-radius:50%;
-  border:2px solid var(--ring); background:#fff; flex:0 0 24px;
-  display:flex; align-items:center; justify-content:center;
-  transition:border-color .2s ease, background .2s ease, transform .08s ease;
-}
-.circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); }
-.circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
-@keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
+  .scroll-spacer{ height:45vh; }
 
-/* Галочка — статично */
-.tick{ width:14px; height:14px; display:block; }
-.tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
-.done .circle{ background:var(--accent); border-color:var(--accent); }
+  /* Строка — компактная */
+  li{ display:flex; align-items:flex-start; padding:6px 4px; font-size:18px; line-height:1.25; }
 
-/* Текст + placeholder с ПЛАВНЫМ появлением */
-.textwrap{ position:relative; flex:1; }
-.task-text{
-  position:relative;
-  min-height:1.25em; white-space:pre-wrap; word-break:break-word;
-  outline:none; border:none; background:transparent; padding:0; margin:0;
-  font-size:22px; line-height:1.35; color:var(--ink);
-}
-.task-text::selection{ background:rgba(255,208,0,.35); }
+  /* Кружок */
+  .circle{
+    width:20px; height:20px; border:2px solid var(--ring);
+    border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition: transform 90ms ease, box-shadow 90ms ease, background-color 140ms ease, border-color 140ms ease;
+    box-shadow:none; position:relative;
+  }
+  .circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); }
+  .circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
+  @keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
 
-/* placeholder (серый) */
-.placeholder{
-  position:absolute; left:0; top:0;
-  color:#bcbcbc; pointer-events:none;
-  opacity:1; transition:opacity .25s ease;
-  font-size:22px; line-height:1.35;
-  padding:2px 0 4px;
-}
-/* Псевдо-плейсхолдер всегда есть, исчезает когда есть текст */
-.hasText + .placeholder{ opacity:0; }
+  /* Галочка — статично */
+  .tick{ width:14px; height:14px; display:block; }
+  .tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
+  .done .circle{ background:var(--accent); border-color:var(--accent); }
 
-/* Статус выполнено — текст сереет */
-li.done .task-text{ color:#999; }
+  /* Текст + placeholder с ПЛАВНЫМ появлением */
+  .textwrap{ position:relative; flex:1; }
+  .task-text{
+    position:relative;
+    min-height:1.25em; white-space:pre-wrap; word-break:break-word;
+    outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
+    padding:2px 0 4px;
+  }
+  /* Псевдо-плейсхолдер всегда есть, но прозрачен; при .empty — плавный fade-in */
+  .task-text::before{
+    content: attr(data-placeholder);
+    position:absolute; left:0; top:0;
+    color:#b4b4b4; pointer-events:none;
+    opacity:0; transform: translateY(2px);
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+  .task-text.empty::before{ opacity:1; transform: translateY(0); }
+  .done .task-text{ color:var(--muted); }
 
-/* Анимация зачёркивания через SVG (линия рисуется слева направо) */
-.strike-svg{ position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
-.strike-line{
-  stroke:#000; stroke-width:2.2; stroke-linecap:round;
-  stroke-opacity:.9; vector-effect:non-scaling-stroke;
-  stroke-dasharray: var(--len, 20);
-  stroke-dashoffset: var(--len, 20);
-  transition: stroke-dashoffset .32s ease;
-}
-li.done .strike-line{ stroke-opacity:.45; }
+  /* Перечёркивание по реальному тексту (SVG), Y из метрик шрифта */
+  .strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
+  .strike-line{
+    stroke: currentColor; stroke-width:1; stroke-linecap:round;
+    stroke-dasharray: var(--len, 0); stroke-dashoffset: var(--len, 0);
+    transition: stroke-dashoffset 220ms ease-out; opacity:.95;
+  }
 
-/* Нижний док: бренд + FAB */
-.bottomDock{
-  position:fixed; right:20px;
-  display:flex; align-items:center; gap:16px; z-index:10;
-  bottom:calc(20px + env(safe-area-inset-bottom));
-}
-.brand{ font-weight:800; color:#bcbcbc; letter-spacing:.6px; }
-.fab{
-  width:64px; height:64px; border-radius:50%;
-  border:none; outline:none; cursor:pointer;
-  background:var(--accent); color:#fff; font-size:32px; line-height:1;
-  box-shadow: 0 8px 28px rgba(0,0,0,.2);
-  display:flex; align-items:center; justify-content:center;
-  transition: transform .08s ease, box-shadow .2s ease;
-}
-.fab:active{ transform:translateY(1px); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  /* Нижний док — белый, прямоугольный */
+  .bottomDock{
+    position:absolute; left:16px; right:16px; bottom:calc(20px + env(safe-area-inset-bottom));
+    background:#fff; border-radius:0; padding:10px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:none; z-index:12;
+  }
+  .brand{ font-family:"Fredoka",system-ui,-apple-system,sans-serif; font-weight:700; font-size:22px; letter-spacing:.5px; color:var(--brand); user-select:none; }
 
-/* ===== Safari text-decoration fix & strike alignment override ===== */
+  /* «+» — круглый */
+  .fab{
+    width:54px; height:54px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:32px; line-height:0;
+    border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 12px rgba(0,0,0,.16);
+    will-change:transform, box-shadow; transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.98); }
+
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+
+/* ==== Safari text-decoration fix & strike alignment override ==== */
 .task-text { text-decoration: none; -webkit-text-decoration-skip: none; }
 li.done .task-text { text-decoration: none; }
 .textwrap { position: relative; } /* container for strike-svg */
-
-/* ==== Viewport & keyboard-safe layout (iOS Safari) ==== */
-html, body { height: 100%; }
-body { overscroll-behavior-y: none; overflow: hidden; }
-
-.wrapper, .phone {
-  height: var(--appH, 100dvh);
-  min-height: var(--appH, 100dvh);
-}
-
-/* Keep content clear of the bottom toolbar + keyboard */
-.app {
-  padding-bottom: calc(24px + env(safe-area-inset-bottom) + var(--kb-offset, 0px));
-}
-
-.bottomDock {
-  bottom: calc(20px + env(safe-area-inset-bottom) + var(--kb-offset, 0px)) !important;
-}
-
-/* Optional: keep header visually anchored under the notch */
-.header {
-  position: sticky;
-  top: calc(env(safe-area-inset-top));
-  background:#fff;
-  z-index: 5;
-}
