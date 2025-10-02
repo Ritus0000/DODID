@@ -3,30 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-  <title>DODID</title>
+  <title>Dodid</title>
 
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="white">
-  <meta name="apple-mobile-web-app-title" content="Dodid">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
 
-  <!-- cache-buster, чтобы GitHub Pages не держал старый CSS -->
-  <link rel="stylesheet" href="./style.css?v=2">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header id="header" aria-label="Top bar">
-    <div class="brand" aria-hidden="true">DODID</div>
-    <div id="dayHeader" class="weekday" aria-live="polite"></div>
-  </header>
+  <div class="app">
+    <!-- Шапка (строго вверху) -->
+    <header class="header" id="dayHeader"></header>
 
-  <ul id="tasks" role="list" aria-label="Task list"></ul>
+    <!-- Список задач (зона прокрутки между шапкой и доком) -->
+    <ul id="tasks"></ul>
 
-  <footer id="dock" aria-label="Bottom dock">
-    <div class="dock-brand" aria-hidden="true">DODID</div>
-    <button id="addBtn" class="fab" aria-label="Добавить задачу" title="Добавить задачу">
-      <svg viewBox="0 0 24 24" class="plus"><path d="M12 5 L12 19 M5 12 L19 12"></path></svg>
-    </button>
-  </footer>
+    <!-- Нижний док (строго внизу) -->
+    <footer class="bottomDock">
+      <div class="brand">DODID</div>
+      <button class="fab" id="addBtn" aria-label="+">+</button>
+    </footer>
+  </div>
 
-  <script defer src="./script.js?v=2"></script>
+  <script src="script.js"></script>
 </body>
 </html>
