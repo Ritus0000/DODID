@@ -11,6 +11,15 @@
 
   --pop-duration:520ms; /* рождение кружка */
 }
+/* Страница не скроллится вообще, скролл только у #tasks */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+
+/* Список — не передаёт инерцию родителю, пружина выключена */
+#tasks{
+  overscroll-behavior: contain;     /* не «прокидывать» скролл наверх */
+  -webkit-overflow-scrolling: touch;/* нативная инерция без пружины */
+  touch-action: pan-y;              /* только вертикальные жесты */
+}
 
 /* База */
 html,body{ margin:0; padding:0; height:100%; }
