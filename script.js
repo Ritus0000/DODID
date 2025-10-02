@@ -80,7 +80,7 @@ function buildStrike(textWrap, animate=true){
     const x1=r.left-parent.left, x2=r.right-parent.left, len=Math.max(0,x2-x1);
     if(len<=0) return;
     let y;
-    if(fm){ const baseline=(r.bottom-parent.top)-fm.d; const xh=fm.a; y=baseline-(xh/2); }
+    if(fm){ const baseline=(r.bottom-parent.top)-fm.d; const xh=fm.a; y=baseline-(xh/3); }
     else{ y=(r.top-parent.top)+r.height*ratio; }
 
     const line=document.createElementNS(svgNS,'line');
@@ -183,19 +183,6 @@ window.addEventListener('resize', ()=>{
   document.querySelectorAll('#tasks li.done .textwrap').forEach(w=>buildStrike(w,false));
 });
 
-/* ===== Поднять док вместе с клавиатурой (iOS visualViewport) ===== */
-const rootStyle = document.documentElement.style;
-function updateDockForKeyboard(){
-  const vv = window.visualViewport;
-  if(!vv) return;
-  const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
-  rootStyle.setProperty('--kb', hidden + 'px');
-}
-if(window.visualViewport){
-  visualViewport.addEventListener('resize', updateDockForKeyboard);
-  visualViewport.addEventListener('scroll',  updateDockForKeyboard);
-  window.addEventListener('orientationchange', updateDockForKeyboard);
-  updateDockForKeyboard();
 }
 /* ==== Анти-bounce для iOS (чтоб шапка не «ездила») ==== */
 (function lockIOSRubberBand(){
