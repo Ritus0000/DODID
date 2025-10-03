@@ -1,126 +1,101 @@
 :root{
-  /* Палитра и параметры интерфейса: доступны через var(--name) в любом месте. */
-  --accent:#ffd000; /* Жёлтый акцент — кружок «+» и отмеченные задачи. */
-  --ink:#000;       /* Основной текст. */
-  --muted:#777;     /* Приглушённый текст (выполненные задачи). */
-  --ring:#aaa;      /* Цвет обводки «круга» чекбокса. */
-  --brand:#8a8a8a;  /* Логотип DODID. */
+  --accent:#ffd000;
+  --ink:#000;
+  --muted:#777;
+  --ring:#aaa;
+  --brand:#8a8a8a;
 
-  --header-h:64px;      /* Фиксированная высота верхней шапки. */
-  --dock-h:78px;        /* Базовая высота нижнего дока без safe-area и клавиатуры. */
-  --kb:0px;             /* Сдвиг дока при поднятой клавиатуре (JS обновляет через visualViewport). */
-
-  --pop-duration:520ms; /* Длительность анимации «рождения» кружка при добавлении задачи. */
-}
-/* Страница не скроллится вообще, скролл только у #tasks */
-html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
-/* overflow:hidden на <html>/<body> полностью отключает прокрутку документа, в том числе rubber-band. */
-
-/* Список — не передаёт инерцию родителю, пружина выключена */
-#tasks{
-  overscroll-behavior: contain;     /* События скролла не «прокидываются» вверх по иерархии. */
-  -webkit-overflow-scrolling: touch;/* Инерционная прокрутка на iOS без резины. */
-  touch-action: pan-y;              /* Разрешаем только вертикальные жесты. */
+  --header-h:64px;
+  --dock-h:78px;
+  --pop-duration:520ms;
 }
 
-/* База */
-html,body{ margin:0; padding:0; height:100%; }
+/* Базовая раскладка — страница не скроллится, скролл только у #tasks */
+html, body { height:100%; margin:0; padding:0; overflow:hidden; overscroll-behavior:none; }
 body{
   font-family:"Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-  background:#fff; color:var(--ink);
-  -webkit-tap-highlight-color:transparent; /* Убирает синий хайлайт на iOS при тапе. */
+  color:var(--ink);
+  background:#fff;
+  -webkit-tap-highlight-color:transparent;
 }
 
-/* Приложение натянуто на весь экран */
-.app{
-  position:fixed; inset:0; background:#fff; /* inset:0 = top/right/bottom/left:0; */
-}
+.app{ position:fixed; inset:0; background:#fff; }
 
-/* ===== Шапка — строго у верхней кромки ===== */
+/* Верхняя шапка */
 .header{
   position:fixed; left:0; right:0; top:0; height:var(--header-h);
   display:flex; align-items:flex-end;
-  padding:0 18px 10px 18px;
-  box-sizing:border-box;
-  font-size:32px; font-weight:800;
-  background:#fff; /* Белая подложка, чтобы на прокрутке не «просвечивал» контент. */
+  padding:0 18px 10px 18px; box-sizing:border-box;
+  font-size:32px; font-weight:800; background:#fff;
 }
 
-/* ===== Список — между шапкой и доком ===== */
+/* Список задач — фиксирован между шапкой и доком */
 #tasks{
   position:fixed; left:0; right:0;
   top:var(--header-h);
-  bottom:calc(var(--dock-h) + var(--kb) + env(safe-area-inset-bottom));
-  /* bottom учитывает:
-      --dock-h — собственная высота дока,
-      --kb     — подъём при клавиатуре (JS задаёт),
-      env(safe-area-inset-bottom) — «подбородок» iPhone. */
+  bottom:calc(var(--dock-h) + env(safe-area-inset-bottom));
   list-style:none; margin:0; padding:0 18px;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
-  scrollbar-width:none; /* Скрыть нативный скроллбар в Firefox. */
+  scrollbar-width:none;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
 }
-#tasks::-webkit-scrollbar{ width:1px; height:1px; }                 /* Тонкая «нить» скроллбара. */
-#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); }  /* По умолчанию прозрачный. */
-#tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); } /* Появляется при скролле. */
+#tasks::-webkit-scrollbar{ width:1px; height:1px; }
+#tasks::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,0); }
+#tasks.scrolling::-webkit-scrollbar-thumb{ background-color:rgba(0,0,0,.24); }
 
 li{
   display:flex; align-items:flex-start;
   padding:6px 4px;
-  font-size:18px; line-height:1.25; /* Важно для расчёта высоты и визуальной плотности. */
+  font-size:18px; line-height:1.25;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
+li.done{ color:var(--muted); }
 
-/* ===== Кружок ===== */
+/* Кружок */
 .circle{
-  width:20px; height:20px; border:2px solid var(--ring);
-  border-radius:50%; margin-right:10px; margin-top:2px; flex-shrink:0;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition: transform 90ms ease, box-shadow 90ms ease,
-              background-color 140ms ease, border-color 140ms ease;
+  width:20px; height:20px; border:2px solid var(--ring); border-radius:50%;
+  margin-right:10px; margin-top:2px; flex-shrink:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition: transform 90ms ease, box-shadow 90ms ease, background-color 140ms ease, border-color 140ms ease;
   box-shadow:none; position:relative;
 }
-.circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); } /* Тактильный отклик. */
+.circle.touch{ transform:scale(0.95); box-shadow: inset 0 1.5px 3px rgba(0,0,0,.25); }
 .circle.born{ animation: pop var(--pop-duration) cubic-bezier(.2,.8,.2,1) forwards; transform:scale(0); }
 @keyframes pop{ 0%{transform:scale(0);} 70%{transform:scale(1.14);} 100%{transform:scale(1);} }
+.done .circle{ background:var(--accent); border-color:var(--accent); }
+.tick{ width:14px; height:14px; display:block; }
+.tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; }
 
-.done .circle{ background:var(--accent); border-color:var(--accent); } /* Выполненное — залитый жёлтый. */
-.tick{ width:14px; height:14px; display:block; } /* Контейнер для SVG-галочки. */
-.tick path{ fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; } /* Белая галочка. */
-
-/* ===== Текст + placeholder ===== */
-.textwrap{ position:relative; flex:1; } /* Нужен для абсолютного позиционирования SVG зачёркивания. */
+/* Текст задачи */
+.textwrap{ position:relative; flex:1; }
 .task-text{
   min-height:1.25em; white-space:pre-wrap; word-break:break-word;
   outline:none; border:none; background:transparent; font:inherit; color:var(--ink);
   padding:2px 0 4px;
 }
 .task-text::before{
-  content:"Новая задача…";
-  position:absolute; left:0; top:0;
-  color:#b4b4b4; pointer-events:none;
-  opacity:0; transform:translateY(2px);
+  content:"Новая задача…"; position:absolute; left:0; top:0;
+  color:#b4b4b4; pointer-events:none; opacity:0; transform:translateY(2px);
   transition:opacity 220ms ease, transform 220ms ease;
 }
-.task-text.empty::before{ opacity:1; transform:translateY(0); } /* Видим плейсхолдер, если нет текста. */
-.done .task-text{ color:var(--muted); } /* При выполнении — приглушённый цвет. */
+.task-text.empty::before{ opacity:1; transform:translateY(0); }
 
-/* ===== Зачёркивание по тексту (SVG поверх) ===== */
+/* Зачёркивание (SVG поверх текста) */
 .strike-svg{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
-/* Каждая строка — <line> с анимацией «прорисовки» через dashoffset */
 .strike-line{
   stroke:currentColor; stroke-width:1; stroke-linecap:round;
   stroke-dasharray:var(--len,0); stroke-dashoffset:var(--len,0);
   transition:stroke-dashoffset 220ms ease-out; opacity:.95;
 }
 
-/* ===== Нижний док — строго у нижней кромки, белый, без линии ===== */
+/* Нижняя панель — ЖЁСТКО ФИКСИРОВАНА (плюс не едет за клавиатурой) */
 .bottomDock{
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(var(--dock-h) + env(safe-area-inset-bottom)); /* убрали var(--kb) */
-  padding: 12px 18px 12px 18px;
-
+  position:fixed; left:0; right:0; bottom:0;
+  height:var(--dock-h);
+  padding:0 18px env(safe-area-inset-bottom);
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fff; box-sizing:border-box;
 }
 .brand{
   font-family:"Fredoka",system-ui,-apple-system,sans-serif;
@@ -128,7 +103,7 @@ li{
   user-select:none;
 }
 
-/* ===== Плюс — меньше, белый знак по центру ===== */
+/* Плюс */
 .fab{
   width:48px; height:48px; border-radius:50%;
   background:var(--accent); color:#fff;
@@ -138,32 +113,8 @@ li{
   box-shadow:0 6px 12px rgba(0,0,0,.16);
   transition:transform 120ms ease, box-shadow 120ms ease;
 }
-.fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.97); } /* Эффект нажатия. */
+.fab.pressed{ box-shadow:none; transform:translateY(2px) scale(0.97); }
 
 @media (prefers-reduced-motion:reduce){
-  *{ animation:none !important; transition:none !important; } /* Уважение к настройкам доступности. */
-}
-
-/* Ниже — стили для мягкого «съезда» выполненных задач вниз.
-   ВАЖНО: только визуальная перестановка DOM-узлов, модель не меняется. */
-li {
-  display: flex;
-  align-items: flex-start;
-  padding: 6px 4px;
-  font-size: 18px;
-  line-height: 1.25;
-  transition: transform 0.3s ease, opacity 0.3s ease; /* Плавные изменения при перестановке. */
-}
-
-li.done {
-  color: var(--muted);
-}
-
-/* мягкий "съезд" вниз: делаем контейнер флекс-колонкой, чтобы appendChild менял порядок визуально */
-#tasks{
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--header-h);
-  bottom: calc(var(--dock-h) + env(safe-area-inset-bottom)); /* тоже без var(--kb) */
+  *{ animation:none !important; transition:none !important; }
 }
