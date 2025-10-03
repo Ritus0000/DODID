@@ -300,23 +300,6 @@ window.addEventListener('resize', ()=>{
   document.querySelectorAll('#tasks li.done .textwrap').forEach(w=>buildStrike(w,false));
 });
 
-/* ===== Поднять док вместе с клавиатурой (iOS visualViewport) ===== */
-const rootStyle = document.documentElement.style;
-function updateDockForKeyboard(){
-  // visualViewport даёт фактическую высоту видимой области при поднятой клавиатуре (iOS).
-  const vv = window.visualViewport;
-  if(!vv) return;
-  // Сколько пикселей «съедено» клавиатурой: разница между innerHeight и vv.height + смещение.
-  const hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
-  rootStyle.setProperty('--kb', hidden + 'px'); // Проставляем CSS-переменную --kb для bottomDock.
-}
-if(window.visualViewport){
-  visualViewport.addEventListener('resize', updateDockForKeyboard); // Меняется при показе/скрытии клавиатуры.
-  visualViewport.addEventListener('scroll',  updateDockForKeyboard); // На iOS бывает «скролл» вьюпорта.
-  window.addEventListener('orientationchange', updateDockForKeyboard); // Поворот экрана — перестроить.
-  updateDockForKeyboard(); // Инициализация.
-}
-
 /* ==== Анти-bounce для iOS (чтоб шапка не «ездила») ==== */
 (function lockIOSRubberBand(){
   // Смысл: отключить «резиновую» прокрутку, при которой тянется вся страница.
