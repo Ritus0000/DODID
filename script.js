@@ -226,20 +226,26 @@ function render(){
     li.appendChild(circle); li.appendChild(wrap); list.appendChild(li);
 
     // Клик по кружку — переключение done (если строка не пуста).
-    circle.addEventListener('click',()=>{
-      if((text.textContent||'').trim()==='') return; // Пустые строки не отмечаем выполненными.
-      t.done=!t.done; save();                         // Инвертируем флаг и сохраняем.
+   circle.addEventListener('click',()=>{
+  if((text.textContent||'').trim()==='') return;
+  t.done=!t.done; save();
 
-      if(t.done){
-        // Визуально отмечаем: класс .done, перерисовываем галочку и строим зачёркивание.
-        li.classList.add('done'); circle.innerHTML=''; circle.appendChild(makeTick());
-        buildStrike(wrap,true);
-      } else {
-        // Снимаем отметку: убираем SVG и галочку.
-        li.classList.remove('done'); circle.innerHTML='';
-        const s=wrap.querySelector('.strike-svg'); if(s) s.remove();
-      }
-    });
+  if(t.done){
+    li.classList.add('done'); circle.innerHTML=''; circle.appendChild(makeTick());
+    buildStrike(wrap,true);
+  } else {
+    li.classList.remove('done'); circle.innerHTML='';
+    const s=wrap.querySelector('.strike-svg'); if(s) s.remove();
+  }
+
+  // Перемещение в DOM (вниз или вверх)
+  if (t.done) {
+    list.appendChild(li);
+  } else {
+    list.insertBefore(li, list.firstChild);
+  }
+});
+
 
     // Ввод текста: синхронизируем модель, сохраняем, поддерживаем зачёркивание для done-строк.
     text.addEventListener('input',()=>{
